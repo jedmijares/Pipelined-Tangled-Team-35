@@ -1,3 +1,6 @@
+//This is Dr. Dietz's version of Floaty and I added
+// the negf module so all the float operations are done
+
 // Field definitions
 `define	WORD	[15:0]	// generic machine word size
 `define	INT	signed [15:0]	// integer size
