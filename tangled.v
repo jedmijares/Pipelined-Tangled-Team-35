@@ -5,7 +5,7 @@
 `define WORD	[15:0]
 // `define	TAGWORD	[16:0]
 // `define	OP	[4:0]
-// `define	STATE	[4:0] // some state numbers are OPs
+`define	STATE	[4:0] // some state numbers are OPs
 `define REGSIZE	[7:0]
 `define MEMSIZE	[65535:0]
 
@@ -256,16 +256,16 @@ input reset, clk;
 // reg `WORD pc = 0;
 // reg `WORD ir;
 // // reg `Imm8 pre, sys;
-// // reg `STATE s, op;
+reg `STATE s, op;
 // // reg `Reg1 rn;
 // // wire valid;
 
 // // alu myalu(valid, aluv, op, r[s == `Pack1], r[rn]);
 
-// always @(posedge reset) begin
-//   halt <= 0;
-//   pc <= 0;
-//   s <= `Start;
+always @(posedge reset) begin
+  halt <= 0;
+  pc <= 0;
+  // s <= `Start;
 
 //   // initialize some stuff...
 //   r[0] = 17'h00001; // 1
@@ -322,7 +322,7 @@ input reset, clk;
 //     // default is OPsys and some illegal instructions
 //     default: begin sys <= ir `Imm8; halt <= 1; end
 //   endcase
-// end
+end
 endmodule
 
 
