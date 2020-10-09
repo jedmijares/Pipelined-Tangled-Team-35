@@ -5,14 +5,19 @@
 `define WORD	[15:0]
 // `define	TAGWORD	[16:0]
 // `define	OP	[4:0]
-`define	STATE	[4:0] // some state numbers are OPs
+`define	STATE	[3:0] // some state numbers are OPs
 `define REGSIZE	[7:0]
 `define MEMSIZE	[65535:0]
 
 // // field placements and values
 // `define	TAG	[16]    // type tag in registers
-// `define Op0	[15:11] // opcode field
-// `define	Reg0	[10:8]  // register number field
+`define Op0	[15:12] // opcode field
+`define	Reg0	[11:8]  // register number field
+`define DestReg [7:4]
+`define SourceReg [3:0]
+`define DATA	[15:0]
+`define REGS	[15:0]
+
 // `define Op1	[7:3]   // second opcode
 // `define Reg1	[2:0]   // second register number, also size
 // `define	Imm8	[7:0]   // also used as size
@@ -21,6 +26,11 @@
 // // TACKY data type flag values
 // `define	TFLOAT	1'b1
 // `define	TINT	1'b0
+
+`define SYSCALL 16'b0
+
+`define Start 4'hd
+`define Decode 4'hf // change eventually
 
 // // opcode values, also state numbers
 // `define OPa2r	5'b00000
@@ -63,7 +73,7 @@
 // Distributed under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
 
 // // Field definitions
-// `define	WORD	[15:0]	// generic machine word size
+`define	WORD	[15:0]	// generic machine word size
 // `define	INT	signed [15:0]	// integer size
 // `define FLOAT	[15:0]	// half-precision float size
 // `define FSIGN	[15]	// sign bit
@@ -246,100 +256,117 @@
 // end
 // endmodule
 
+
+
 module processor(halt, reset, clk);
-output reg halt;
-input reset, clk;
-// // reg `TAGWORD r `REGSIZE;
-// // wire `TAGWORD aluv;
-// reg `WORD text `MEMSIZE; // instruction memory
-// reg `WORD data `MEMSIZE; // data memory
-// reg `WORD pc = 0;
-// reg `WORD ir;
-// // reg `Imm8 pre, sys;
-reg `STATE s, op;
-// // reg `Reg1 rn;
-// // wire valid;
+  output reg halt;
+  input reset, clk;
+  reg `DATA r `REGS;	// register file [15:0]
+  // reg [15:0] r [15:0];
+  // // reg `TAGWORD r `REGSIZE;
+  // // wire `TAGWORD aluv;
+  reg `WORD text `MEMSIZE; // instruction memory
+  reg `WORD data `MEMSIZE; // data memory
+  reg `WORD pc = 0;
+  reg `WORD ir;
+  // // reg `Imm8 pre, sys;
+  reg `STATE s, op, s2;
+  // // reg `Reg1 rn;
+  // // wire valid;
 
-// // alu myalu(valid, aluv, op, r[s == `Pack1], r[rn]);
+  // // alu myalu(valid, aluv, op, r[s == `Pack1], r[rn]);
 
-always @(posedge reset) begin
-  halt <= 0;
-  pc <= 0;
-  // s <= `Start;
+  always @(posedge reset) begin
+    halt <= 0;
+    pc <= 0;
+    s <= `Start;
 
-//   // initialize some stuff...
-//   r[0] = 17'h00001; // 1
-//   r[1] = 17'h13f80; // 1.0
-//   r[2] = 17'h00002; // 2
-//   r[3] = 17'h14000; // 2.0
-//   text[0] = { `OPadd, 3'd2, `OPadd, 3'd3 };
-//   // r[0] = 17'h00003, r[1] = 17'h14040
-//   text[1] = { `OPsub, 3'd2, `OPsub, 3'd3 };
-//   text[2] = { `OPsys, 3'd0, 8'd0 };
+  //   // initialize some stuff...
+  //   r[0] = 17'h00001; // 1
+  //   r[1] = 17'h13f80; // 1.0
+  //   r[2] = 17'h00002; // 2
+  //   r[3] = 17'h14000; // 2.0
+  //   text[0] = { `OPadd, 3'd2, `OPadd, 3'd3 };
+  //   // r[0] = 17'h00003, r[1] = 17'h14040
+  //   text[1] = { `OPsub, 3'd2, `OPsub, 3'd3 };
+  //   text[2] = { `OPsys, 3'd0, 8'd0 };
 
-//   // the better way would be using readmem...
-// // readmemh1(text);
-// // readmemh2(data);
-// end
+  //   // the better way would be using readmem...
+  $readmemh("testAssembly.text", text);
+  $readmemh("testAssembly.data", data);
+  r[0] = 1'b1;
+  r[1] = 1'b1;
+  r[2] = 1'b1;
+  end
 
-// always @(posedge clk) begin
-//   case (s)
-//     `Start:  begin ir <= text[pc]; s <= `Decode; end
-//     `Decode: begin
-//                pc <= pc + 1;
-// 	       op <= ir `Op0; rn <= ir `Reg0;
-//                s <= ((ir `OpPack == 2'b11) ? ir `Op0 : `Pack0);
-// 	     end
-//     // `OPcf8:  begin r[rn] <= {`TFLOAT, pre, ir `Imm8}; s <= `Start; end
-//     // `OPci8:  begin r[rn] <= {`TINT, pre, ir `Imm8}; s <= `Start; end
-//     // `OPjnz8: begin if (r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
-//     // `OPjz8:  begin if (!r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
-//     // `OPjp8:  begin pc <= {pre, ir `Imm8}; s <= `Start; end
-//     // `OPpre:  begin pre <= ir `Imm8; s <= `Start; end
-//     // `Pack0:  begin
-//     //            case (op)
-//     //              `OPjr:   pc <= r[rn] `WORD;
-// 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[0] `WORD]};
-// 		//  `OPli:   r[rn] <= {`TINT, data[r[0] `WORD]};
-// 		//  `OPst:   data[r[rn]] <= r[0] `WORD;
-// 		//  `OPa2r:  r[rn] <= r[0];
-// 		 default: if (valid) r[0] <= aluv;
-//                endcase
-// 	       op <= ir `Op1; rn <= ir `Reg1;
-// 	       s <= `Pack1;
-// 	     end
-//     `Pack1:  begin
-//                case (ir `Op1)
-//                  `OPjr:   pc <= r[rn] `WORD;
-// 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[1] `WORD]};
-// 		//  `OPli:   r[rn] <= {`TINT, data[r[1] `WORD]};
-// 		//  `OPst:   data[r[rn]] <= r[1] `WORD;
-// 		//  `OPa2r:  r[rn] <= r[1];
-// 		 default: if (valid) r[1] <= aluv;
-//                endcase
-// 	       s <= `Start;
-//              end
-//     // default is OPsys and some illegal instructions
-//     default: begin sys <= ir `Imm8; halt <= 1; end
-//   endcase
-end
+  always @(posedge clk) begin
+    case (s)
+      `Start: begin ir <= text[pc]; s <= `Decode; end // need decode state
+      `Decode: begin
+        pc <= pc + 1;
+        op <= ir `Op0; // rn <= ir `Reg0;
+        s <= ir `Op0;
+        s2 <= ir `Reg0;
+        // s <= ((ir `OpPack == 2'b11) ? ir `Op0 : `Pack0);
+      end
+      4'h6: 
+      begin
+        case (s2)
+          4'h0: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
+          // default:
+        endcase
+      end
+      // default:
+  //     // `OPcf8:  begin r[rn] <= {`TFLOAT, pre, ir `Imm8}; s <= `Start; end
+  //     // `OPci8:  begin r[rn] <= {`TINT, pre, ir `Imm8}; s <= `Start; end
+  //     // `OPjnz8: begin if (r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
+  //     // `OPjz8:  begin if (!r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
+  //     // `OPjp8:  begin pc <= {pre, ir `Imm8}; s <= `Start; end
+  //     // `OPpre:  begin pre <= ir `Imm8; s <= `Start; end
+  //     // `Pack0:  begin
+  //     //            case (op)
+  //     //              `OPjr:   pc <= r[rn] `WORD;
+  // 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[0] `WORD]};
+  // 		//  `OPli:   r[rn] <= {`TINT, data[r[0] `WORD]};
+  // 		//  `OPst:   data[r[rn]] <= r[0] `WORD;
+  // 		//  `OPa2r:  r[rn] <= r[0];
+  // 		 default: if (valid) r[0] <= aluv;
+  //                endcase
+  // 	       op <= ir `Op1; rn <= ir `Reg1;
+  // 	       s <= `Pack1;
+  // 	     end
+  //     `Pack1:  begin
+  //                case (ir `Op1)
+  //                  `OPjr:   pc <= r[rn] `WORD;
+  // 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[1] `WORD]};
+  // 		//  `OPli:   r[rn] <= {`TINT, data[r[1] `WORD]};
+  // 		//  `OPst:   data[r[rn]] <= r[1] `WORD;
+  // 		//  `OPa2r:  r[rn] <= r[1];
+  // 		 default: if (valid) r[1] <= aluv;
+  //                endcase
+  // 	       s <= `Start;
+  //              end
+  //     // default is OPsys and some illegal instructions
+  //     default: begin sys <= ir `Imm8; halt <= 1; end
+    endcase
+  end
 endmodule
 
 
-// module testbench;
-// reg reset = 0;
-// reg clk = 0;
-// wire halted;
-// processor PE(halted, reset, clk);
-// initial begin
-//   $dumpfile;
-//   $dumpvars(1, PE.pc, PE.r[0], PE.r[1]); // would normally trace 0, PE
-//   #10 reset = 1;
-//   #10 reset = 0;
-//   while (!halted) begin
-//     #10 clk = 1;
-//     #10 clk = 0;
-//   end
-//   $finish;
-// end
-// endmodule
+module testbench;
+reg reset = 0;
+reg clk = 0;
+wire halted;
+processor PE(halted, reset, clk);
+initial begin
+  $dumpfile("dump.txt");
+  $dumpvars(0, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.s, PE.s2, PE.ir); // would normally trace 0, PE
+  #1 reset = 1;
+  #1 reset = 0;
+  while (!halted) begin
+    #1 clk = 1;
+    #1 clk = 0;
+  end
+  $finish;
+end
+endmodule
