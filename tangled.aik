@@ -3,20 +3,20 @@
 
 sys             :=      0x0:4 0x000:12
 
-; 8 bit opcode, take 4 bit operand, 4 0s
+; 8 bit opcode, take 4 bit operand, 4 0s    ; jed looks at these
 jumpr $.a       :=      0x10:8 .a:4 0:4
 neg $.d         :=      0x11:8 .d:4 0:4
-negf $.d        :=      0x12:8 .d:4 0:4
+negf $.d        :=      0x12:8 .d:4 0:4       ; ben
 not $.d         :=      0x13:8 .d:4 0:4
 
 ; 4 bit opcode, take 4 bit + 8 bit operand
-brf $.c, .addr  :=      0x2:4 .c:4 (.addr-.):8
+brf $.c, .addr  :=      0x2:4 .c:4 (.addr-.):8    ; get help from dietz
 brt $.c, .addr	:=	0x3:4 .c:4 (.addr-.):8
 lex $.d, .imm8  :=      0x4:4 .d:4 .imm8:8
 lhi $.d, .imm8	:=	0x5:4 .d:4 .imm8:8
 
 ; 8 bit opcode
-add $.d, $.s	:=	0x60:8 .d:4 .s:4
+add $.d, $.s	:=	0x60:8 .d:4 .s:4              ; done these
 mul $.d, $.s    :=      0x61:8 .d:4 .s:4
 slt $.d, $.s    :=      0x62:8 .d:4 .s:4
 and $.d, $.s    :=      0x63:8 .d:4 .s:4
@@ -24,20 +24,20 @@ or $.d, $.s	:=	0x64:8 .d:4 .s:4
 xor $.d, $.s	:=	0x65:8 .d:4 .s:4
 shift $.d, $.s	:=	0x66:8 .d:4 .s:4
 
-; 8 bit opcode
+; 8 bit opcode                                ; ben will do floats
 addf $.d, $.s	:=	0x70:8 .d:4 .s:4
 mulf $.d, $.s	:=	0x71:8 .d:4 .s:4
 sltf $.d, $.s   :=      0x72:8 .d:4 .s:4
 recip $.d	:=	0x74:8 .d:4 0:4
 float $.d       :=      0x78:8 .d:4 0:4
 int $.d		:=	0x79:8 .d:4 0:4
+copy $.d, $.s   :=	0x7a:8 .d:4 .s:4            ; jed
+load $.d, $.s   :=      0x7b:8 .d:4 .s:4
+store $.d, $.s  :=      0x7c:8 .d:4 .s:4
 
-; 8 bit opcode
-copy $.d, $.s   :=	0x80:8 .d:4 .s:4
-load $.d, $.s   :=      0x81:8 .d:4 .s:4
-store $.d, $.s  :=      0x82:8 .d:4 .s:4
+; 8 is decode state
 
-; 8 bit opcode
+; 8 bit opcode      ; nick will set qat stuff to sys calls
 not @.a 	:=	0x90:8 .a:8
 one @.a 	:=	0x91:8 .a:8
 zero @.a	:=	0x92:8 .a:8
