@@ -3,14 +3,11 @@
 
 // basic sizes of things
 `define WORD	[15:0]
-// `define	TAGWORD	[16:0]
-// `define	OP	[4:0]
 `define	STATE	[3:0] // some state numbers are OPs
 `define REGSIZE	[7:0]
 `define MEMSIZE	[65535:0]
 
 // // field placements and values
-// `define	TAG	[16]    // type tag in registers
 `define Op0	[15:12] // opcode field
 `define	Reg0	[11:8]  // register number field
 `define DestReg [7:4]
@@ -21,25 +18,11 @@
 `define BOTTOM8 [7:0]
 `define TOP8    [15:8]
 
-// `define Op1	[7:3]   // second opcode
-// `define Reg1	[2:0]   // second register number, also size
-// `define	Imm8	[7:0]   // also used as size
-// `define	OpPack	[15:14]	// if not 2'b11, packed inst
-
-// // TACKY data type flag values
-// `define	TFLOAT	1'b1
-// `define	TINT	1'b0
-
 `define SYSCALL 16'b0
 
 
-// `define Decode 4'hf // change eventually
-
 `define OPsys      4'h0
-//maybe have a single bit to mean Decode and if that bit is
-// 1 then it will Decode within the 4'h0 state
-// I mean give Decode the code 4'h0 like sys then within the case
-// check a single bit which is set every time we enter start state
+
 
 `define OPoneReg   4'h1
 `define OPjumpr    4'h0
@@ -97,42 +80,6 @@
 `define OPmeasQ    4'he
 
 `define OPnextQ    4'hf
-
-// // opcode values, also state numbers
-// `define OPa2r	5'b00000
-// `define OPr2a	5'b00001
-// `define OPadd	5'b00010
-// `define OPand	5'b00011
-// `define OPcvt	5'b00100
-// `define OPdiv	5'b00101
-// `define OPmul	5'b00110
-// `define OPnot	5'b00111
-// `define OPor	5'b01000
-// `define OPsh	5'b01001
-// `define OPslt	5'b01010
-// `define OPsub	5'b01011
-// `define OPxor	5'b01100
-
-// `define OPjr	5'b10000
-// `define OPlf	5'b10001
-// `define OPli	5'b10010
-// `define OPst	5'b10011
-
-// `define OPcf8	5'b11000
-// `define OPci8	5'b11001
-// `define OPjnz8	5'b11010
-// `define OPjz8	5'b11011
-
-// `define OPjp8	5'b11100
-// `define OPpre	5'b11101
-// `define OPsys	5'b11110
-
-// // state numbers
-// `define Start	`OPa2r
-// `define Decode	`OPr2a
-// `define Pack0	`OPadd
-// `define Pack1	`OPand
-
 
 // Floating point Verilog modules for CPE480
 // Created February 19, 2019 by Henry Dietz, http://aggregate.org/hankd
@@ -195,19 +142,12 @@ endmodule
 
 // // Field definitions
 `define	WORD	[15:0]	// generic machine word size
-// `define	INT	signed [15:0]	// integer size
-// `define FLOAT	[15:0]	// half-precision float size
-// `define FSIGN	[15]	// sign bit
-// `define FEXP	[14:7]	// exponent
-// `define FFRAC	[6:0]	// fractional part (leading 1 implied)
 
 module processor(halt, reset, clk);
   output reg halt;
   input reset, clk;
   reg `DATA r `REGS;	// register file [15:0]
-  // reg [15:0] r [15:0];
-  // // reg `TAGWORD r `REGSIZE;
-  // // wire `TAGWORD aluv;
+
   reg `WORD text `MEMSIZE; // instruction memory
   reg `WORD data `MEMSIZE; // data memory
   reg `WORD pc = 0;
@@ -221,7 +161,6 @@ module processor(halt, reset, clk);
   wire `FLOAT floatAddResult;
   fadd floatAdder(floatAddResult, r[ir[7:4]], r[ir[3:0]]);
 
-  // // alu myalu(valid, aluv, op, r[s == `Pack1], r[rn]);
 
   always @(posedge reset) begin
     halt <= 0;
@@ -260,7 +199,6 @@ module processor(halt, reset, clk);
           op <= ir `Op0; // rn <= ir `Reg0;
           s <= ir `Op0;
           s2 <= ir `Reg0;
-          // s <= ((ir `OpPack == 2'b11) ? ir `Op0 : `Pack0);
         end
 
       `OPsys: //0
@@ -319,45 +257,6 @@ module processor(halt, reset, clk);
           //  `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end //not sure how to do this float module implementation
           endcase
         end
-
-
-
-
-
-
-
-      // default:
-  //     // `OPcf8:  begin r[rn] <= {`TFLOAT, pre, ir `Imm8}; s <= `Start; end
-  //     // `OPci8:  begin r[rn] <= {`TINT, pre, ir `Imm8}; s <= `Start; end
-  //     // `OPjnz8: begin if (r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
-  //     // `OPjz8:  begin if (!r[rn] `WORD) pc <= {pre, ir `Imm8}; s <= `Start; end
-  //     // `OPjp8:  begin pc <= {pre, ir `Imm8}; s <= `Start; end
-  //     // `OPpre:  begin pre <= ir `Imm8; s <= `Start; end
-  //     // `Pack0:  begin
-  //     //            case (op)
-  //     //              `OPjr:   pc <= r[rn] `WORD;
-  // 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[0] `WORD]};
-  // 		//  `OPli:   r[rn] <= {`TINT, data[r[0] `WORD]};
-  // 		//  `OPst:   data[r[rn]] <= r[0] `WORD;
-  // 		//  `OPa2r:  r[rn] <= r[0];
-  // 		 default: if (valid) r[0] <= aluv;
-  //                endcase
-  // 	       op <= ir `Op1; rn <= ir `Reg1;
-  // 	       s <= `Pack1;
-  // 	     end
-  //     `Pack1:  begin
-  //                case (ir `Op1)
-  //                  `OPjr:   pc <= r[rn] `WORD;
-  // 		//  `OPlf:   r[rn] <= {`TFLOAT, data[r[1] `WORD]};
-  // 		//  `OPli:   r[rn] <= {`TINT, data[r[1] `WORD]};
-  // 		//  `OPst:   data[r[rn]] <= r[1] `WORD;
-  // 		//  `OPa2r:  r[rn] <= r[1];
-  // 		 default: if (valid) r[1] <= aluv;
-  //                endcase
-  // 	       s <= `Start;
-  //              end
-  //     // default is OPsys and some illegal instructions
-  //     default: begin sys <= ir `Imm8; halt <= 1; end
     endcase
   end
 endmodule
