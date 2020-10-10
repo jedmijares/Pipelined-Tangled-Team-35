@@ -430,15 +430,14 @@ module processor(halt, reset, clk);
    
       `OPfloats:
         begin
-          case (s2)
-            begin
-              `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end //not sure how to do this float module implementation
-              `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end //not sure how to do this float module implementation
-              `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end //not sure how to do this float module implementation
-              `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end //not sure how to do this float module implementation
-              `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end //not sure how to do this float module implementation
-              `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end //not sure how to do this float module implementation
-            endcase
+          //case (s2)
+          //  `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end //not sure how to do this float module implementation
+          //  `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end //not sure how to do this float module implementation
+          //  `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end //not sure how to do this float module implementation
+          //  `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end //not sure how to do this float module implementation
+          //  `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end //not sure how to do this float module implementation
+          //  `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end //not sure how to do this float module implementation
+          //endcase
         end
 
 
