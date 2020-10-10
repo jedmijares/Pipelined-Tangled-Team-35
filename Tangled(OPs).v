@@ -79,22 +79,22 @@
 `define OPoneQ     4'h1
 `define OPzeroQ    4'h2
 
-`define OPhadQ     4'hA
+`define OPhadQ     4'ha
 
-`define OPtwoQ     4'hB
+`define OPtwoQ     4'hb
 `define OPcnotQ    4'h0
 `define OPswapQ    4'h1
 
-`define OPthreeQ   4'hC
+`define OPthreeQ   4'hc
 `define OPccnotQ   4'h0
 `define OPcswapQ   4'h1
 `define OPandQ     4'h3
 `define OPorQ      4'h4
 `define OPxorQ     4'h5
 
-`define OPmeasQ    4'hE
+`define OPmeasQ    4'he
 
-`define OPnextQ    4'hF
+`define OPnextQ    4'hf
 
 // // opcode values, also state numbers
 // `define OPa2r	5'b00000
