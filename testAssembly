@@ -1,12 +1,11 @@
 	.text
 start:
-	lhi $1, 0x3f
-	lhi $2, 0x40
-	lex $1, 0x80
-	lex $2, 0x00
-	addf $1, $2
-	lhi $1, 0x3f
-	lhi $2, 0x40
-	lex $1, 0x80
-	lex $2, 0x00
-	addf $1, $2
+	lhi $1, 0x00
+	lhi $2, 0x00
+	lex $1, 0x01
+	lex $2, 0x01
+	add $1, $2
+	copy $0, $1
+	store $0, $1
+	load $2, $1
+	sys

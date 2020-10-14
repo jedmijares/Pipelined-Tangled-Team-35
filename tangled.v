@@ -20,7 +20,6 @@
 
 `define SYSCALL 16'b0
 
-
 `define OPsys      4'h0
 
 
@@ -51,6 +50,8 @@
 `define OPrecip    4'h4
 `define OPfloat    4'h8
 `define OPint      4'h9
+
+`define OPmem      4'h7
 `define OPcopy     4'ha
 `define OPload     4'hb
 `define OPstore    4'hc
@@ -190,8 +191,7 @@ module processor(halt, reset, clk);
           ir <= text[pc]; 
           nextInstruction <= text[pc + 1];
           s <= `Decode;
-          // doDec = 1; 
-        end // need decode state
+        end 
       
       `Decode: 
         begin
@@ -255,8 +255,13 @@ module processor(halt, reset, clk);
           //  `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end //not sure how to do this float module implementation
           //  `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end //not sure how to do this float module implementation
           //  `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end //not sure how to do this float module implementation
+
+          `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
+          `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
+          `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
           endcase
         end
+
     endcase
   end
 endmodule
@@ -269,7 +274,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(0, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.s, PE.s2, PE.ir, PE.halt, PE.nextInstruction); // would normally trace 0, PE
+  $dumpvars(0, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.data[0], PE.data[1], PE.data[2], PE.s, PE.s2, PE.ir, PE.halt, PE.nextInstruction); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
