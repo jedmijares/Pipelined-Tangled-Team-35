@@ -1,0 +1,51 @@
+\documentclass{sig-alternate-05-2015}
+\begin{document}
+
+% ACM templates include ISBN and DOI...
+\isbn{N.A.}
+\doi{N.A.}
+
+\title{CPE480 Assignment 2: Multi-Cycle Tangled }
+\subtitle{Implementor's Notes}
+
+\numberofauthors{3}
+\author{
+Gerard (Jed) Mijares\\
+Ben Luckett\\
+Nick Santini\\
+       \affaddr{Department of Electrical and Computer Engineering}\\
+       \affaddr{University of Kentucky, Lexington, KY USA}\\
+    %   \email{\texttt{gami227@uky.edu}}
+}
+% \author{
+
+% }
+
+\maketitle
+\begin{abstract}
+This is a simple combinatorial design project that solves a simple arithmetic problem. It also includes a testbench that ensures it recieves the correct output for any two inputs.
+\end{abstract}
+
+
+\section{General Approach}
+
+The goal of this project was to construct a synthesizable 8-bit 1's complement subtractor. Additionally, the design must output a "NaN", or -0, if either input is NaN.
+
+To refresh myself on the basics of writing Verilog, I began by creating and testing the basic building blocks I would need. I first wrote a half-adder, used it to build a full-adder, and finally chained 8 of them together to create my 8-bit adder.
+
+My \texttt{onesub} module instantiates two instances of my 8-bit adder. Each uses \texttt{a} and an inverted copy of \texttt{b} as its operands. The first adder is used solely to generate the carry bit required to do a 1's complement subtraction. That bit is forwarded to the second adder, which generates the remainder of the subtraction, \texttt{secondOut}.
+
+However, \texttt{r} is not necessarily assigned the value of \texttt{secondOut}. My code uses the ternary \texttt{?:} operator to first check if either input is \texttt{`NaN}, and preserves the \texttt{`NaN} value if so. Otherwise, there is a second nested \texttt{?:} to check if \texttt{secondOut} is equal to -0, or \texttt{`NaN}, in which case \texttt{r} is assigned +0. If neither of these conditions occurs, \texttt{r} is assigned \texttt{secondOut}.
+
+My testbench is largely borrowed from the one implemented in last spring's Solution 0. This testbench tests each possible combination of two 8-bit input values, and uses \texttt{\#1} to ensure there is time for the output is processed correctly. The only notable change is that I modified the display output to display 1's complement numbers, using the macros defined in Dr. Dietz's demo code for this assignment.
+
+% insert a break to roughly level columns...
+\vfill\pagebreak
+
+\section{Issues}
+
+I ran into two major issues while writing this project. In the first, I had a conflicting number of passing cases depending on whether I was running my project on my local machine versus Dr. Dietz's web CGI interface. I asked him for any insight and he revealed the cause of the discrepancy was a timing error in an \texttt{always} block in my \texttt{onesub} module. I was triggering the block on a change of inputs \texttt{a} or \texttt{b}, instead of the result \texttt{secondOut}. This caused a race condition that lead to some cases passing on my machine that failed on the web interface.
+
+I later learned that I was actually barred from using an \texttt{always} block at all, so I needed to find a new way to assign the remainder \texttt{r} without it. To do so, I replaced my case statements with nested \texttt{?:} statements.
+
+\end{document}
