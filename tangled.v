@@ -17,9 +17,10 @@
 `define SECOND4 `Reg0
 `define BOTTOM8 [7:0]
 `define TOP8    [15:8]
+`define THIRD4  [7:4]
+`define FOURTH4 [3:0]
 
 `define SYSCALL 16'b0
-
 
 `define OPsys      4'h0
 
@@ -40,7 +41,7 @@
 `define OPmul      4'h1
 `define OPslt      4'h2
 `define OPand      4'h3
-`define OPor	     4'h4
+`define OPor	   4'h4
 `define OPxor      4'h5
 `define OPshift    4'h6
 
@@ -51,6 +52,8 @@
 `define OPrecip    4'h4
 `define OPfloat    4'h8
 `define OPint      4'h9
+
+`define OPmem      4'h7
 `define OPcopy     4'ha
 `define OPload     4'hb
 `define OPstore    4'hc
@@ -115,6 +118,15 @@ assign t[0] = !s2[1];
 assign d = (s ? t : 16);
 endmodule
 
+// Float set-less-than, 16-bit (1-bit result) torf=a<b
+module fslt(torf, a, b);
+output wire torf;
+input wire `FLOAT a, b;
+assign torf = (a `FSIGN && !(b `FSIGN)) ||
+	      (a `FSIGN && b `FSIGN && (a[14:0] > b[14:0])) ||
+	      (!(a `FSIGN) && !(b `FSIGN) && (a[14:0] < b[14:0]));
+endmodule
+
 // Floating-point addition, 16-bit r=a+b
 module fadd(r, a, b);
 output wire `FLOAT r;
@@ -139,6 +151,77 @@ assign sexp = (texp + 1) - slead;
 assign s = (sman ? (sexp ? {ssign, sexp[7:0], sfrac[7:1]} : 0) : 0);
 endmodule
 
+// Floating-point multiply, 16-bit r=a*b
+module fmul(r, a, b);
+output wire `FLOAT r;
+input wire `FLOAT a, b;
+wire [15:0] m; // double the bits in a fraction, we need high bits
+wire [7:0] e;
+wire s;
+assign s = (a `FSIGN ^ b `FSIGN);
+assign m = ({1'b1, (a `FFRAC)} * {1'b1, (b `FFRAC)});
+assign e = (((a `FEXP) + (b `FEXP)) -127 + m[15]);
+assign r = (((a == 0) || (b == 0)) ? 0 : (m[15] ? {s, e, m[14:8]} : {s, e, m[13:7]}));
+endmodule
+
+// Floating-point reciprocal, 16-bit r=1.0/a
+// Note: requires initialized inverse fraction lookup table
+module frecip(r, a);
+output wire `FLOAT r;
+input wire `FLOAT a;
+reg [6:0] look[127:0];
+initial $readmemh("reciprocalLookup.mem", look);
+assign r `FSIGN = a `FSIGN;
+assign r `FEXP = 253 + (!(a `FFRAC)) - a `FEXP;
+assign r `FFRAC = look[a `FFRAC];
+endmodule
+
+// Floating-point shift, 16 bit
+// Shift +left,-right by integer
+module fshift(r, f, i);
+output wire `FLOAT r;
+input wire `FLOAT f;
+input wire `INT i;
+assign r `FFRAC = f `FFRAC;
+assign r `FSIGN = f `FSIGN;
+assign r `FEXP = (f ? (f `FEXP + i) : 0);
+endmodule
+
+// Integer to float conversion, 16 bit
+module i2f(f, i);
+output wire `FLOAT f;
+input wire `INT i;
+wire [4:0] lead;
+wire `WORD pos;
+assign pos = (i[15] ? (-i) : i);
+lead0s m0(lead, pos);
+assign f `FFRAC = (i ? ({pos, 8'b0} >> (16 - lead)) : 0);
+assign f `FSIGN = i[15];
+assign f `FEXP = (i ? (128 + (14 - lead)) : 0);
+endmodule
+
+// Float to integer conversion, 16 bit
+// Note: out-of-range values go to -32768 or 32767
+module f2i(i, f);
+output wire `INT i;
+input wire `FLOAT f;
+wire `FLOAT ui;
+wire tiny, big;
+fslt m0(tiny, f, `F32768);
+fslt m1(big, `F32767, f);
+assign ui = {1'b1, f `FFRAC, 16'b0} >> ((128+22) - f `FEXP);
+assign i = (tiny ? 0 : (big ? 32767 : (f `FSIGN ? (-ui) : ui)));
+endmodule
+
+//My version of negf
+// Floating-point negative, 16-bit r=-a
+// Note: requires initialized inverse fraction lookup table
+module negf(r, a);
+output wire `FLOAT r;
+input wire `FLOAT a;
+assign r = {!(a `FSIGN), a `NOTSIGN};
+endmodule
+
 
 // // Field definitions
 `define	WORD	[15:0]	// generic machine word size
@@ -158,8 +241,14 @@ module processor(halt, reset, clk);
   // // reg `Reg1 rn;
   // // wire valid;
 
-  wire `FLOAT floatAddResult;
-  fadd floatAdder(floatAddResult, r[ir[7:4]], r[ir[3:0]]);
+  wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
+  fadd myFAdd(addfRes, r[ir `THIRD4], r[ir `FOURTH4]);
+  fmul myFMul(multfRes,r[ir `THIRD4], r[ir `FOURTH4]);
+  fslt myFSLT(sltfRes, r[ir `THIRD4], r[ir `FOURTH4]);
+  frecip myFRec(recipRes, r[ir `THIRD4]);
+  f2i myFloToInt(floatRes,r[ir `THIRD4]);
+  i2f myIntToFlo(intRes,  r[ir `THIRD4]);
+  negf myNegF(negfRes,    r[ir `THIRD4]);
 
 
   always @(posedge reset) begin
@@ -190,8 +279,7 @@ module processor(halt, reset, clk);
           ir <= text[pc]; 
           nextInstruction <= text[pc + 1];
           s <= `Decode;
-          // doDec = 1; 
-        end // need decode state
+        end 
       
       `Decode: 
         begin
@@ -206,13 +294,93 @@ module processor(halt, reset, clk);
           halt <= 1;
           s <= `Start;
         end
+        
+      `OPsingleQ:
+        begin
+          case (s2)
+            `OPnotQ: begin s <= `OPsys; end
+            `OPoneQ: begin s <= `OPsys; end
+            `OPzeroQ: begin s <= `OPsys; end
+          endcase
+        end
+
+      // `OPhadQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPtwoQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPcnotQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPswapQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPthreeQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPccnotQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPcswapQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPandQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPorQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
+      // `OPxorQ:
+      //   begin
+      //     s <= `OPsys;
+      //   end
+
+      // `OPmeasQ:
+      //   begin
+      //     s <= `OPsys;
+      //   end
+
+      // `OPnextQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
+
 
       `OPoneReg: //1
         begin
           case (s2)
             `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
             `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
-            // `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end //negfRes is the output of negf module
+            `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
             `OPnot:   begin r[ir `DestReg] <= !r[ir `DestReg]; s <= `Start; end
           endcase
         end
@@ -249,14 +417,18 @@ module processor(halt, reset, clk);
       `OPfloats:
         begin
           case (s2)
-           `OPaddf:  begin r[ir `DestReg] <= floatAddResult; s <= `Start; end //not sure how to do this float module implementation
-          //  `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end //not sure how to do this float module implementation
-          //  `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end //not sure how to do this float module implementation
-          //  `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end //not sure how to do this float module implementation
-          //  `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end //not sure how to do this float module implementation
-          //  `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end //not sure how to do this float module implementation
+           `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
+           `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
+           `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
+           `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
+           `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
+           `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
+          `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
+          `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
+          `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
           endcase
         end
+
     endcase
   end
 endmodule
@@ -269,7 +441,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(0, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.s, PE.s2, PE.ir, PE.halt, PE.nextInstruction); // would normally trace 0, PE
+  $dumpvars(0, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.data[0], PE.data[1], PE.data[2], PE.s, PE.s2, PE.ir, PE.halt, PE.nextInstruction); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
