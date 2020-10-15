@@ -170,7 +170,7 @@ module frecip(r, a);
 output wire `FLOAT r;
 input wire `FLOAT a;
 reg [6:0] look[127:0];
-initial $readmemh0(look);
+initial $readmemh("reciprocalLookup.mem", look);
 assign r `FSIGN = a `FSIGN;
 assign r `FEXP = 253 + (!(a `FFRAC)) - a `FEXP;
 assign r `FFRAC = look[a `FFRAC];
