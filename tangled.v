@@ -221,17 +221,21 @@ module processor(halt, reset, clk);
 
       `OPtwoQ:
         begin
-          `OPcnotQ: begin s <= `OPsys; end
-          `OPswapQ: begin s <= `OPsys; end
+          case (s2)
+            `OPcnotQ: begin s <= `OPsys; end
+            `OPswapQ: begin s <= `OPsys; end
+          endcase
         end
 
       `OPthreeQ:
         begin
-          `OPccnotQ: begin s <= `OPsys; end
-          `OPcswapQ: begin s <= `OPsys; end
-          `OPandQ: begin s <= `OPsys; end
-          `OPorQ: begin s <= `OPsys; end
-          `OPxorQ: begin s <= `OPsys; end
+          case (s2)
+            `OPccnotQ: begin s <= `OPsys; end
+            `OPcswapQ: begin s <= `OPsys; end
+            `OPandQ: begin s <= `OPsys; end
+            `OPorQ: begin s <= `OPsys; end
+            `OPxorQ: begin s <= `OPsys; end
+          endcase
         end
 
       `OPmeasQ: begin s <= `OPsys; end
