@@ -295,85 +295,43 @@ module processor(halt, reset, clk);
           s <= `Start;
         end
         
+      // Start Qat
       `OPsingleQ:
         begin
           case (s2)
-            `OPnotQ: begin s <= `OPsys; end
-            `OPoneQ: begin s <= `OPsys; end
-            `OPzeroQ: begin s <= `OPsys; end
+            `OPnotQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPoneQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPzeroQ: begin s <= `Start; $error("missing coprocessor"); end
           endcase
         end
 
-      // `OPhadQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPhadQ: begin s <= `Start; $error("missing coprocessor"); end
 
-      // `OPtwoQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPtwoQ:
+        begin
+          pc <= pc + 1;
+          case (s2)
+            `OPcnotQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPswapQ: begin s <= `Start; $error("missing coprocessor"); end
+          endcase
+        end
 
-      // `OPcnotQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPthreeQ:
+        begin
+          pc <= pc + 1;
+          case (s2)
+            `OPccnotQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPcswapQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPandQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPorQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPxorQ: begin s <= `Start; $error("missing coprocessor"); end
+          endcase
+        end
 
-      // `OPswapQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPmeasQ: begin s <= `Start; $error("missing coprocessor"); end
 
-      // `OPthreeQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPccnotQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPcswapQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPandQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPorQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPxorQ:
-      //   begin
-      //     s <= `OPsys;
-      //   end
-
-      // `OPmeasQ:
-      //   begin
-      //     s <= `OPsys;
-      //   end
-
-      // `OPnextQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
+      `OPnextQ: begin s <= `Start; $error("missing coprocessor"); end
+      // End Qat
 
       `OPoneReg: //1
         begin
