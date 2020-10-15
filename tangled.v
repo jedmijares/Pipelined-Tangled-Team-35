@@ -297,97 +297,82 @@ module processor(halt, reset, clk);
         
       `OPsingleQ:
         begin
-          //halt <= 1;
-          s <= `OPsys;
+          case (s2)
+            `OPnotQ: begin s <= `OPsys; end
+            `OPoneQ: begin s <= `OPsys; end
+            `OPzeroQ: begin s <= `OPsys; end
+          endcase
         end
 
-      `OPnotQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPhadQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPoneQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPtwoQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPzeroQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPcnotQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPhadQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPswapQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPtwoQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPthreeQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPcnotQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPccnotQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPswapQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPcswapQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPthreeQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPandQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPccnotQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPorQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
-      `OPcswapQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPxorQ:
+      //   begin
+      //     s <= `OPsys;
+      //   end
 
-      `OPandQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPmeasQ:
+      //   begin
+      //     s <= `OPsys;
+      //   end
 
-      `OPorQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
-
-      `OPxorQ:
-        begin
-          s <= `OPsys;
-        end
-
-      `OPmeasQ:
-        begin
-          s <= `OPsys;
-        end
-
-      `OPnextQ:
-        begin
-          //halt <= 1;
-          s <= `OPsys;
-        end
+      // `OPnextQ:
+      //   begin
+      //     //halt <= 1;
+      //     s <= `OPsys;
+      //   end
 
 
       `OPoneReg: //1
