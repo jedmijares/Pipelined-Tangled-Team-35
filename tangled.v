@@ -411,6 +411,9 @@ module processor(halt, reset, clk);
             `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
             `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
             `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
+            `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
+              // $d[15:0] = (($s[15:0] > 0) ? ($d[15:0] << $s[15:0]) : ($d[15:0] >> -$s[15:0]))
+            end
           endcase
         end
    
