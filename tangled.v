@@ -206,7 +206,8 @@ module processor(halt, reset, clk);
           halt <= 1;
           s <= `Start;
         end
-        
+      
+      // Start Qat
       `OPsingleQ:
         begin
           case (s2)
@@ -216,76 +217,27 @@ module processor(halt, reset, clk);
           endcase
         end
 
-      // `OPhadQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPhadQ: begin s <= `OPsys; end
 
-      // `OPtwoQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPtwoQ:
+        begin
+          `OPcnotQ: begin s <= `OPsys; end
+          `OPswapQ: begin s <= `OPsys; end
+        end
 
-      // `OPcnotQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPthreeQ:
+        begin
+          `OPccnotQ: begin s <= `OPsys; end
+          `OPcswapQ: begin s <= `OPsys; end
+          `OPandQ: begin s <= `OPsys; end
+          `OPorQ: begin s <= `OPsys; end
+          `OPxorQ: begin s <= `OPsys; end
+        end
 
-      // `OPswapQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
+      `OPmeasQ: begin s <= `OPsys; end
 
-      // `OPthreeQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPccnotQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPcswapQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPandQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPorQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
-      // `OPxorQ:
-      //   begin
-      //     s <= `OPsys;
-      //   end
-
-      // `OPmeasQ:
-      //   begin
-      //     s <= `OPsys;
-      //   end
-
-      // `OPnextQ:
-      //   begin
-      //     //halt <= 1;
-      //     s <= `OPsys;
-      //   end
-
+      `OPnextQ: begin s <= `OPsys; end
+      // End Qat
 
       `OPoneReg: //1
         begin
