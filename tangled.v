@@ -423,9 +423,6 @@ module processor(halt, reset, clk);
            `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
            `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
            `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
-	   `OPcopy:  begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
-	   `OPload:  begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
-	   `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
           `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
           `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
           `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end

@@ -19,3 +19,8 @@ start:
 	;meas $1, @1
 	;next $1, @1
 	addf $1, $2
+  lhi $1, 0x3f
+	lhi $2, 0x40
+	lex $1, 0x80
+	lex $2, 0x00
+	addf $1, $2
