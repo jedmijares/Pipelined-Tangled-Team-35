@@ -344,17 +344,7 @@ module processor(halt, reset, clk);
         end
 
       `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b0}}, ~(ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-      //   // begin 
-      //   //   if(r[ir `SECOND4] == 16'b0) 
-      //   //     begin 
-      //   //     pc <= pc + {8'b0,ir `BOTTOM8}; 
-      //   //     end 
-      //   //   s <= `Start; 
-      //   // end
-
-
-      // // `OPbrt: begin if(r[ir `SECOND4] != 0) begin pc <= pc + ir `BOTTOM8; end s <= `Start; end
-      // `OPbrt: begin pc <= pc + (r[ir `SECOND4] != 16'b0 ? {8'b0,ir `BOTTOM8} : (16'b0)); s <= `Start; end
+      `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b0}}, ~(ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
 
       `OPlex: 
       begin 
