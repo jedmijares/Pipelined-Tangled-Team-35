@@ -356,7 +356,10 @@ module processor(halt, reset, clk);
       // // `OPbrt: begin if(r[ir `SECOND4] != 0) begin pc <= pc + ir `BOTTOM8; end s <= `Start; end
       // `OPbrt: begin pc <= pc + (r[ir `SECOND4] != 16'b0 ? {8'b0,ir `BOTTOM8} : (16'b0)); s <= `Start; end
 
-      `OPlex: begin r[ir `SECOND4] `BOTTOM8 <= ir `BOTTOM8; s <= `Start; end
+      `OPlex: 
+      begin 
+        r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
+      end
 
       `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
 
