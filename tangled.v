@@ -343,7 +343,7 @@ module processor(halt, reset, clk);
           endcase
         end
 
-      `OPbrf: begin pc <= pc + ((r[ir `SECOND4] == 16'b0) ? (16'b0) : ir `BOTTOM8); s <= `Start; end
+      `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b0}}, ~(ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
       //   // begin 
       //   //   if(r[ir `SECOND4] == 16'b0) 
       //   //     begin 
