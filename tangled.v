@@ -299,7 +299,7 @@ module processor(halt, reset, clk);
       `OPsingleQ:
         begin
           case (s2)
-            `OPnotQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPnotQ: begin s <= `Start; end
             `OPoneQ: begin s <= `Start; $error("missing coprocessor"); end
             `OPzeroQ: begin s <= `Start; $error("missing coprocessor"); end
           endcase
@@ -343,8 +343,8 @@ module processor(halt, reset, clk);
           endcase
         end
 
-      `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b0}}, ~(ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-      `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b0}}, ~(ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+      `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+      `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
 
       `OPlex: 
       begin 
