@@ -38,8 +38,8 @@ The main body of our processor involves using a case statement on the first 4 bi
 
 \section{Issues}
 
-% I ran into two major issues while writing this project. In the first, I had a conflicting number of passing cases depending on whether I was running my project on my local machine versus Dr. Dietz's web CGI interface. I asked him for any insight and he revealed the cause of the discrepancy was a timing error in an \texttt{always} block in my \texttt{onesub} module. I was triggering the block on a change of inputs \texttt{a} or \texttt{b}, instead of the result \texttt{secondOut}. This caused a race condition that lead to some cases passing on my machine that failed on the web interface.
+Qat instructions increment pc
 
-% I later learned that I was actually barred from using an \texttt{always} block at all, so I needed to find a new way to assign the remainder \texttt{r} without it. To do so, I replaced my case statements with nested \texttt{?:} statements.
+branch instructions
 
 \end{document}
