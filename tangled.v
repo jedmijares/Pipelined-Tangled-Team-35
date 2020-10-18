@@ -1,5 +1,4 @@
-// Barely-tested multi-cycle TACKY sample solution
-// Written by Henry Dietz, http://aggregate.org/hankd
+// Multi-cycle Tangled Implementation
 
 // basic sizes of things
 `define WORD	[15:0]
@@ -20,6 +19,7 @@
 `define THIRD4  [7:4]
 `define FOURTH4 [3:0]
 
+// op codes
 `define SYSCALL 16'b0
 
 `define OPsys      4'h0
@@ -212,7 +212,6 @@ assign ui = {1'b1, f `FFRAC, 16'b0} >> ((128+22) - f `FEXP);
 assign i = (tiny ? 0 : (big ? 32767 : (f `FSIGN ? (-ui) : ui)));
 endmodule
 
-//My version of negf
 // Floating-point negative, 16-bit r=-a
 // Note: requires initialized inverse fraction lookup table
 module negf(r, a);
@@ -220,7 +219,6 @@ output wire `FLOAT r;
 input wire `FLOAT a;
 assign r = {!(a `FSIGN), a `NOTSIGN};
 endmodule
-
 
 // Field definitions
 `define	WORD	[15:0]	// generic machine word size
@@ -250,8 +248,8 @@ module processor(halt, reset, clk);
     halt <= 0;
     pc <= 0;
     s <= `Start;
-    $readmemh("testAssembly.text", text);
-    $readmemh("testAssembly.data", data);
+    $readmemh("branchTest.text", text);
+    $readmemh("branchTest.data", data);
   end
 
   always @(posedge clk) begin
@@ -270,13 +268,12 @@ module processor(halt, reset, clk);
           s2 <= ir `Reg0;
         end
 
-      `OPsys: //0
+      `OPsys: 
         begin
           halt <= 1;
           s <= `Start;
         end
         
-      // Start Qat
       `OPsingleQ:
         begin
           case (s2)
@@ -312,9 +309,8 @@ module processor(halt, reset, clk);
       `OPmeasQ: begin s <= `Start; $error("missing coprocessor"); end
 
       `OPnextQ: begin s <= `Start; $error("missing coprocessor"); end
-      // End Qat
 
-      `OPoneReg: //1
+      `OPoneReg: 
         begin
           case (s2)
             `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
