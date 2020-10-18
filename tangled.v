@@ -223,7 +223,7 @@ assign r = {!(a `FSIGN), a `NOTSIGN};
 endmodule
 
 
-// // Field definitions
+// Field definitions
 `define	WORD	[15:0]	// generic machine word size
 
 module processor(halt, reset, clk);
@@ -236,10 +236,7 @@ module processor(halt, reset, clk);
   reg `WORD pc = 0;
   reg `WORD ir;
   reg `WORD nextInstruction;
-  // // reg `Imm8 pre, sys;
-  reg `STATE s, op, s2;
-  // // reg `Reg1 rn;
-  // // wire valid;
+  reg `STATE s, s2;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
   fadd myFAdd(addfRes, r[ir `THIRD4], r[ir `FOURTH4]);
@@ -256,17 +253,7 @@ module processor(halt, reset, clk);
     pc <= 0;
     s <= `Start;
 
-  //   // initialize some stuff...
-  //   r[0] = 17'h00001; // 1
-  //   r[1] = 17'h13f80; // 1.0
-  //   r[2] = 17'h00002; // 2
-  //   r[3] = 17'h14000; // 2.0
-  //   text[0] = { `OPadd, 3'd2, `OPadd, 3'd3 };
-  //   // r[0] = 17'h00003, r[1] = 17'h14040
-  //   text[1] = { `OPsub, 3'd2, `OPsub, 3'd3 };
-  //   text[2] = { `OPsys, 3'd0, 8'd0 };
-
-  //   // the better way would be using readmem...
+  // the better way would be using readmem...
   $readmemh("testAssembly.text", text);
   $readmemh("testAssembly.data", data);
 
@@ -284,7 +271,6 @@ module processor(halt, reset, clk);
       `Decode: 
         begin
           pc <= pc + 1;
-          op <= ir `Op0; // rn <= ir `Reg0;
           s <= ir `Op0;
           s2 <= ir `Reg0;
         end
@@ -363,7 +349,6 @@ module processor(halt, reset, clk);
             `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
             `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
             `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
-              // $d[15:0] = (($s[15:0] > 0) ? ($d[15:0] << $s[15:0]) : ($d[15:0] >> -$s[15:0]))
             end
           endcase
         end
@@ -382,7 +367,6 @@ module processor(halt, reset, clk);
           `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
           endcase
         end
-
     endcase
   end
 endmodule
