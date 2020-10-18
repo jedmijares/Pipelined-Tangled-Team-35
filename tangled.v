@@ -7,7 +7,7 @@
 `define REGSIZE	[7:0]
 `define MEMSIZE	[65535:0]
 
-// // field placements and values
+// field placements and values
 `define Op0	[15:12] // opcode field
 `define	Reg0	[11:8]  // register number field
 `define DestReg [7:4]
@@ -23,7 +23,6 @@
 `define SYSCALL 16'b0
 
 `define OPsys      4'h0
-
 
 `define OPoneReg   4'h1
 `define OPjumpr    4'h0
@@ -247,16 +246,12 @@ module processor(halt, reset, clk);
   i2f myIntToFlo(intRes,  r[ir `THIRD4]);
   negf myNegF(negfRes,    r[ir `THIRD4]);
 
-
   always @(posedge reset) begin
     halt <= 0;
     pc <= 0;
     s <= `Start;
-
-  // the better way would be using readmem...
-  $readmemh("testAssembly.text", text);
-  $readmemh("testAssembly.data", data);
-
+    $readmemh("testAssembly.text", text);
+    $readmemh("testAssembly.data", data);
   end
 
   always @(posedge clk) begin
@@ -356,21 +351,20 @@ module processor(halt, reset, clk);
       `OPfloats:
         begin
           case (s2)
-           `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
-           `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
-           `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
-           `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
-           `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
-           `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
-          `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
-          `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
-          `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
+            `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
+            `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
+            `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
+            `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
+            `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
+            `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
+            `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
+            `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
+            `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
           endcase
         end
     endcase
   end
 endmodule
-
 
 module testbench;
 reg reset = 0;
