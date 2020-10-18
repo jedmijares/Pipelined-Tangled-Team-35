@@ -1,21 +1,7 @@
 	.text
   lex $1, 0x00
   brf $1, start
-  sys
-  sys
-  sys
-  sys
-  sys
-  sys
 start:
-  or @1, @1, @1
-	lex $1, 0x01
-  or @1, @1, @1
-  not @1
-  not @1
-  or @1, @1, @1
-  or @1, @1, @1
-  not @1
   brt $1, start
 lab:
   lex $1, 0xFF
