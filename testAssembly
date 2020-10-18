@@ -1,22 +1,23 @@
 	.text
+  lex $1, 0x00
+  brf $1, start
+  sys
+  sys
+  sys
+  sys
+  sys
+  sys
 start:
-	lhi $1, 0x3f
-	lhi $2, 0x40
-	lex $1, 0x80
-	lex $2, 0x00
-	addf $1, $2
-	not @1
-	one @1
-	zero @1
-	had @1, 0
-	cnot @1, @2
-	swap @1, @2
-	ccnot @1, @2, @3
-	cswap @1, @2, @3
-	and @1, @2, @3
-	or @1, @2, @3
-	xor @1, @2, @3
-	meas $1, @1
-	next $1, @1
-	addf $1, $2
-	sys
+  or @1, @1, @1
+	lex $1, 0x01
+  or @1, @1, @1
+  not @1
+  not @1
+  or @1, @1, @1
+  or @1, @1, @1
+  not @1
+  brt $1, start
+lab:
+  lex $1, 0xFF
+  sys
+  
