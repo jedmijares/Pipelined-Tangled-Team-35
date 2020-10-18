@@ -17,9 +17,6 @@ Nick Santini\\
        \affaddr{University of Kentucky, Lexington, KY USA}\\
     %   \email{\texttt{gami227@uky.edu}}
 }
-% \author{
-
-% }
 
 \maketitle
 \begin{abstract}
@@ -28,9 +25,15 @@ This is an multi-cycled implementation of a processor for the Tangled instructio
 
 \section{General Approach}
 
-Our AIK specification of Tangled is largely based on the sample solution provided by Dr. Dietz, with a few changes. Namely, we added two additional possibilities for the first 4 bits of the instruction: \texttt{Start} and \texttt{Decode}. \texttt{0xd} was available, so we used that for \texttt{Start}. However, at this point, we were out of hex numbers for the first 4 bits. So, we combined the instructions that were originally categorized under both \texttt{0x7} and \texttt{0x8} to only \texttt{0x7}, leaving \texttt{0x8} available for \texttt{Decode}.
+Our AIK specification of Tangled is largely based on the sample solution provided by Dr. Dietz, with a few changes. Namely, we added two additional possibilities for the first 4 bits of the instruction: \texttt{Start} and \texttt{Decode}. \texttt{0xd} was available, so we used that for \texttt{Start}. However, at this point, we were out of hex numbers for the first 4 bits. So, we combined the instructions that were originally categorized under both \texttt{0x7} and \texttt{0x8} to only begin with \texttt{0x7}, leaving \texttt{0x8} available for \texttt{Decode}.
 
-The main body of our processor involves using a case statement on the first 4 bits of the instruction. Sometimes, that is sufficient to distinguish which instruction we should use, but if not, we nest a second case statement on the second 4 bits of the instruction to further determine which instruction to use.
+Our processor is structured as a state machine. The first step is to use a case statement on the first 4 bits of the instruction. Sometimes, that is sufficient to distinguish which instruction we should use, but if not, we nest a second case statement on the second 4 bits of the instruction to further determine which instruction to use.
+
+Since some instructions will require a second 16-bit word to process, we elect to simply store both of the next two words in the \texttt{Decode} state.
+
+As recommended by Dr. Dietz, we make use of Verilog's \texttt{`define}s to name ranges of bits we frequently use and the OP code for each instruction.
+
+We decided to run our Verilog locally, so a few commands differ from Dr. Dietz's web interface. A Makefile is included to facilitate running the project.
 
 \vfill\pagebreak
 
