@@ -1,6 +1,12 @@
 ; test branch instructions
 ; should run indefinitely, without halting due to sys call
+
 	.text
+  lex $sp, 0xFF ; load stack pointer
+  br end ; take this branch
+  sys
+  sys
+  sys
 start:
 	lex $1, 0x00
   brt $1, sysCall ; don't take this branch
@@ -19,4 +25,8 @@ lab:
   sys
   sys
   sys
-  
+end:
+  br start ; take this branch
+  sys
+  sys
+  sys
