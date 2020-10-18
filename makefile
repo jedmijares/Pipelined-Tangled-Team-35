@@ -5,9 +5,10 @@ tangled: tangled.v assembly
 dump: dump.txt
 	gtkwave dump.txt
 
-assembly: tangled.aik testAssembly branchTest
+assembly: tangled.aik testAssembly branchTest memoryTest
 	./aik tangled.aik testAssembly
 	./aik tangled.aik branchTest
+	./aik tangled.aik memoryTest
 
 clean:
 	rm floaty *.text *.data tangled

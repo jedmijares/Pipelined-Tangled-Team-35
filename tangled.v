@@ -248,8 +248,8 @@ module processor(halt, reset, clk);
     halt <= 0;
     pc <= 0;
     s <= `Start;
-    $readmemh("branchTest.text", text);
-    $readmemh("branchTest.data", data);
+    $readmemh("memoryTest.text", text);
+    $readmemh("memoryTest.data", data);
     r[15] = 16'hffff; // initialize stack pointer
   end
 
