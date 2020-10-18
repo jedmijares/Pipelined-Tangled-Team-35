@@ -1,0 +1,22 @@
+; test branch instructions
+; should run indefinitely, without halting due to sys call
+	.text
+start:
+	lex $1, 0x00
+  brt $1, sysCall ; don't take this branch
+  brf $1, lab ; take this branch
+  sys
+  sys
+  sys
+sysCall:
+  sys
+  sys
+  sys
+lab:
+  lex $1, 0xFF
+  brf $1, sysCall ; don't take this branch
+  brt $1, start ; take this branch
+  sys
+  sys
+  sys
+  

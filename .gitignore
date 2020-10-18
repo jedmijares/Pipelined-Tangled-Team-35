@@ -14,3 +14,7 @@ dump.txt
 dump.txt.old
 
 pinky.v
+
+*.data
+
+*.text

@@ -1,17 +1,13 @@
-dump: dump.txt tangled
-	gtkwave dump.txt
-
 tangled: tangled.v assembly
 	iverilog -o tangled tangled.v
 	vvp tangled
-	
-floaty: floaty.v
-	iverilog -o floaty floaty.v
 
-assembly: tangled.aik testAssembly
+dump: dump.txt
+	gtkwave dump.txt
+
+assembly: tangled.aik testAssembly branchTest
 	./aik tangled.aik testAssembly
-
-
+	./aik tangled.aik branchTest
 
 clean:
-	rm floaty *.text *.data
+	rm floaty *.text *.data tangled
