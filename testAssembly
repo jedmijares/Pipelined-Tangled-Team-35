@@ -103,4 +103,28 @@ goodSltf:
 	brf $1, goodLoadStore
 	sys
 goodLoadStore:
-  sys ; pc should be 0xE
+  lex $1, 0x5
+  lex $2, 0x6
+  slt $1, $2
+  brt $1, sltPosTrue
+  sys
+sltPosTrue:
+  lex $1, 0x5
+  lex $2, 0x6
+  slt $2, $1
+  brf $2, sltPosFalse
+  sys
+sltPosFalse:
+  lex $1, 0xFF
+  lex $2, 0x6
+  slt $2, $1
+  brf $2, sltNegFalse
+  sys
+sltNegFalse:
+  lex $1, 0xFF
+  lex $2, 0x6
+  slt $1, $2
+  brf $1, sltNegTrue
+  sys
+sltNegTrue:
+  sys
