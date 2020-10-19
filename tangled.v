@@ -275,23 +275,24 @@ module processor(halt, reset, clk);
           s <= `Start;
         end
         
+      // Start Qat
       `OPsingleQ:
         begin
           case (s2)
-            `OPnotQ: begin s <= `Start; end
-            `OPoneQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPzeroQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPnotQ: begin s <= `OPsys; end
+            `OPoneQ: begin s <= `OPsys; end
+            `OPzeroQ: begin s <= `OPsys; end
           endcase
         end
 
-      `OPhadQ: begin s <= `Start; $error("missing coprocessor"); end
+      `OPhadQ: begin s <= `OPsys; end
 
       `OPtwoQ:
         begin
           pc <= pc + 1;
           case (s2)
-            `OPcnotQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPswapQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPcnotQ: begin s <= `OPsys; end
+            `OPswapQ: begin s <= `OPsys; end
           endcase
         end
 
@@ -299,17 +300,18 @@ module processor(halt, reset, clk);
         begin
           pc <= pc + 1;
           case (s2)
-            `OPccnotQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPcswapQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPandQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPorQ: begin s <= `Start; $error("missing coprocessor"); end
-            `OPxorQ: begin s <= `Start; $error("missing coprocessor"); end
+            `OPccnotQ: begin s <= `OPsys; end
+            `OPcswapQ: begin s <= `OPsys; end
+            `OPandQ: begin s <= `OPsys; end
+            `OPorQ: begin s <= `OPsys; end
+            `OPxorQ: begin s <= `OPsys; end
           endcase
         end
 
-      `OPmeasQ: begin s <= `Start; $error("missing coprocessor"); end
+      `OPmeasQ: begin s <= `OPsys; end
 
-      `OPnextQ: begin s <= `Start; $error("missing coprocessor"); end
+      `OPnextQ: begin s <= `OPsys; end
+      // End Qat
 
       `OPoneReg: 
         begin
