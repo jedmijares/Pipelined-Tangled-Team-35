@@ -9,8 +9,8 @@ start:
 	one @1
 	zero @1
 	had @1, 0
-	;cnot @1, @2
-	;swap @1, @2
+	cnot @1, @2
+	swap @1, @2
 	;ccnot @1, @2, @3
 	;cswap @1, @2, @3
 	;and @1, @2, @3
