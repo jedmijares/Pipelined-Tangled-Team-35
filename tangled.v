@@ -248,8 +248,8 @@ module processor(halt, reset, clk);
     halt <= 0;
     pc <= 0;
     s <= `Start;
-    $readmemh("notNegateTest.text", text);
-    $readmemh("notNegateTest.data", data);
+    $readmemh("floatTest.text", text);
+    $readmemh("floatTest.data", data);
     r[15] = 16'hffff; // initialize stack pointer
   end
 
