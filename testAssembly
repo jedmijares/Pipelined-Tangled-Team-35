@@ -115,18 +115,18 @@ sltPosTrue:
   brf $2, sltPosFalse
   sys
 sltPosFalse:
-;  lex $1, 0xFF
-;  lex $2, 0x6
-;  slt $2, $1
-;  brf $2, sltNegFalse
-;  sys
-;sltNegFalse:
- ; lex $1, 0xFF
-  ;lex $2, 0x6
-;  slt $1, $2
- ; brf $1, sltNegTrue
-  ;sys
-;sltNegTrue:
+  lex $1, 0xFF
+  lex $2, 0x6
+  slt $2, $1
+  brf $2, sltNegFalse
+  sys
+sltNegFalse:
+  lex $1, 0xFF
+  lex $2, 0x6
+  slt $1, $2
+  brf $1, sltNegTrue
+  sys
+sltNegTrue:
   lex $1, 0x3
   lex $2, 0x4
   add $1, $2

@@ -233,6 +233,7 @@ module processor(halt, reset, clk);
   reg `WORD pc = 0;
   reg `WORD ir;
   reg `WORD nextInstruction;
+  reg `WORD sltCheck;
   reg `STATE s, s2;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
@@ -338,7 +339,12 @@ module processor(halt, reset, clk);
           case (s2)
             `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
             `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
-            `OPslt: begin r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; end
+            `OPslt: 
+            begin 
+              // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
+              sltCheck = r[ir `DestReg] - r[ir `SourceReg];
+              r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
+            end
             `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
             `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
             `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
