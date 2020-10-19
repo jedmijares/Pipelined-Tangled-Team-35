@@ -248,8 +248,8 @@ module processor(halt, reset, clk);
     halt <= 0;
     pc <= 0;
     s <= `Start;
-    $readmemh("testAssembly.text", text);
-    $readmemh("testAssembly.data", data);
+    $readmemh("notNegateTest.text", text);
+    $readmemh("notNegateTest.data", data);
     r[15] = 16'hffff; // initialize stack pointer
   end
 
@@ -317,7 +317,7 @@ module processor(halt, reset, clk);
             `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
             `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
             `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
-            `OPnot:   begin r[ir `DestReg] <= !r[ir `DestReg]; s <= `Start; end
+            `OPnot:   begin r[ir `DestReg] <= ~r[ir `DestReg]; s <= `Start; end
           endcase
         end
 

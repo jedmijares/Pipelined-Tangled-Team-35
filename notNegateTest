@@ -1,0 +1,18 @@
+; test not/negate
+; pc should end at 0xC
+
+	.text
+  lex $1, 0xFB ; load -5 into $1
+  neg $1 ; $1 should have 5
+  load $2, 5 ; load $2 with 5
+  xor $1, $2 ; check if $1 and $2 are identical
+  brf $1, pass
+  sys
+pass:
+  not $1 ; $1 should become 0xFFFF
+  load $2, 0xFFFF ; load $2 with 0xFFFF
+  xor $1, $2 ; check if $1 and $2 are identical
+  brf $1, pass2
+  sys
+pass2:
+  sys

@@ -1,4 +1,6 @@
 ; test copy/load/store
+; pc should end at 0xA
+
 	.text
   lex $1, 0xFF
   lex $2, 0x00
@@ -11,3 +13,4 @@ pass:
   brt $1, pass2; halt if reg 1 is still 0
   sys
 pass2:
+  sys
