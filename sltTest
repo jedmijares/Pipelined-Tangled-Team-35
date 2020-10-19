@@ -1,0 +1,5 @@
+; test slt instruction
+; pc at end should be 
+
+.text
+  

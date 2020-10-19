@@ -1,22 +1,106 @@
+; test shift instruction
+
 	.text
-start:
+  lex $1, 0x1
+  lex $2, 0x4
+  shift $1, $2
+  lex $0, 0x10
+  xor $0, $1
+  brf $0, pass
+  sys
+pass:
+  lex $2, 0xFC
+  shift $1, $2
+  lex $0, 0x1
+  xor $0, $1
+  brf $0, pass2
+pass2:
+  lex $1, 0xFB ; load -5 into $1
+  neg $1 ; $1 should have 5
+  load $2, 5 ; load $2 with 5
+  xor $1, $2 ; check if $1 and $2 are identical
+  brf $1, pass3
+  sys
+pass3:
+  not $1 ; $1 should become 0xFFFF
+  load $2, 0xFFFF ; load $2 with 0xFFFF
+  xor $1, $2 ; check if $1 and $2 are identical
+  brf $1, pass4
+  sys
+pass4:
+startFloats:
+  lex $1, 0x80
 	lhi $1, 0x3f
-	lhi $2, 0x40
-	lex $1, 0x80
 	lex $2, 0x00
+	lhi $2, 0x40
+	lex $3, 0x40
+	lhi $3, 0x40
 	addf $1, $2
-	not @1
-	one @1
-	zero @1
-	had @1, 0
-	cnot @1, @2
-	swap @1, @2
-	;ccnot @1, @2, @3
-	;cswap @1, @2, @3
-	;and @1, @2, @3
-	;or @1, @2, @3
-	;xor @1, @2, @3
-	meas $1, @1
-	next $1, @1
-	addf $1, $2
+	xor $1, $3
+	brf $1, goodAdd
 	sys
+goodAdd:
+	lex $1, 0x01
+	lex $2, 0x80
+	lhi $2, 0x3f
+	float $1
+	xor $1, $2
+	brf $1, goodFloat
+	sys
+goodFloat:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x01
+	int $1
+	xor $1, $2
+	brf $1, goodInt
+	sys
+goodInt:
+	lex $1, 0x00
+	lhi $1, 0x40
+	copy $2, $1
+	lex $3, 0x80
+	lhi $3, 0x40
+	mulf $1, $2
+	xor $1, $3
+	not $1
+	brt $1, goodMult
+	sys
+goodMult:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x80
+	lhi $2, 0xbf
+	negf $1
+	xor $1, $2
+	brf $1, goodNegf
+	sys
+goodNegf:
+	lex $1, 0x00
+	lhi $1, 0x40
+	lex $2, 0x00
+	lhi $2, 0x3f
+	recip $1
+	xor $1, $2
+	brf $1, goodRecip
+	sys
+goodRecip:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x00
+	lhi $2, 0x40
+	sltf $1, $2
+	brt $1, goodSltf
+	sys
+goodSltf:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x05
+	lhi $2, 0x00
+	store $1, $2
+	load $3, $2
+	xor $1, $3
+	brf $1, goodLoadStore
+	sys
+goodLoadStore:
+  sys ; pc should be 0xE
