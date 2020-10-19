@@ -1,5 +1,3 @@
-; simply calls every instruction
-
 	.text
 start:
 	lhi $1, 0x3f
