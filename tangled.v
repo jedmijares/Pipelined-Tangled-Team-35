@@ -240,8 +240,8 @@ module processor(halt, reset, clk);
   fmul myFMul(multfRes,r[ir `THIRD4], r[ir `FOURTH4]);
   fslt myFSLT(sltfRes, r[ir `THIRD4], r[ir `FOURTH4]);
   frecip myFRec(recipRes, r[ir `THIRD4]);
-  f2i myFloToInt(floatRes,r[ir `THIRD4]);
-  i2f myIntToFlo(intRes,  r[ir `THIRD4]);
+  f2i myFloToInt(intRes ,r[ir `THIRD4]);
+  i2f myIntToFlo(floatRes, r[ir `THIRD4]); 
   negf myNegF(negfRes,    r[ir `THIRD4]);
 
   always @(posedge reset) begin

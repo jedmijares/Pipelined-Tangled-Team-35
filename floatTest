@@ -1,3 +1,6 @@
+; test float instructions
+; pc at end should be 0x43
+
 .text
 startFloats:
   lex $1, 0x80
@@ -74,4 +77,4 @@ goodSltf:
 	brf $1, goodLoadStore
 	sys
 goodLoadStore:
-  
+  sys ; pc at end should be 0x43
