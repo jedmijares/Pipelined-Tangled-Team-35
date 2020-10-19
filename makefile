@@ -10,6 +10,7 @@ assembly: tangled.aik testAssembly branchTest memoryTest
 	./aik tangled.aik branchTest
 	./aik tangled.aik memoryTest
 	./aik tangled.aik notNegateTest
+	./aik tangled.aik floatTest
 
 clean:
 	rm floaty *.text *.data tangled
