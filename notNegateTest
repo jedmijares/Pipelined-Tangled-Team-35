@@ -1,6 +1,0 @@
-; test not/negate
-; pc should end at 0xC
-
-	.text
-  
-  sys ; instruction 0xC

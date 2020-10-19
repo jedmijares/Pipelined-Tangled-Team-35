@@ -1,6 +1,0 @@
-; test float instructions
-; pc at end should be 0x43
-
-.text
-
-  sys ; pc at end should be 0x43
