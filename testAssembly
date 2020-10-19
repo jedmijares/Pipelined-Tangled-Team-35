@@ -115,16 +115,49 @@ sltPosTrue:
   brf $2, sltPosFalse
   sys
 sltPosFalse:
-  lex $1, 0xFF
-  lex $2, 0x6
-  slt $2, $1
-  brf $2, sltNegFalse
+;  lex $1, 0xFF
+;  lex $2, 0x6
+;  slt $2, $1
+;  brf $2, sltNegFalse
+;  sys
+;sltNegFalse:
+ ; lex $1, 0xFF
+  ;lex $2, 0x6
+;  slt $1, $2
+ ; brf $1, sltNegTrue
+  ;sys
+;sltNegTrue:
+  lex $1, 0x3
+  lex $2, 0x4
+  add $1, $2
+  lex $0, 0x7
+  xor $1, $0
+  brf $1, addPass
   sys
-sltNegFalse:
-  lex $1, 0xFF
-  lex $2, 0x6
-  slt $1, $2
-  brf $1, sltNegTrue
+addPass:
+  lex $1, 0x3
+  lex $2, 0x2
+  mul $1, $2
+  lex $0, 0x6
+  xor $1, $0
+  brf $1, mulPass
   sys
-sltNegTrue:
+mulPass:
+  lex $1, 0xB
+  lex $2, 0x9
+  and $1, $2
+  lex $0, 0x9
+  xor $1, $0
+  brf $1, andPass
   sys
+andPass:
+  lex $1, 0xB
+  lex $2, 0x1
+  or $1, $2
+  lex $0, 0xB
+  xor $1, $0
+  brf $1, orPass
+  sys
+orPass:
+  sys
+ 
