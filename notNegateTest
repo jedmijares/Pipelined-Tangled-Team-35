@@ -15,4 +15,4 @@ pass:
   brf $1, pass2
   sys
 pass2:
-  sys
+  sys ; instruction 0xC
