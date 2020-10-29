@@ -5,7 +5,7 @@ tangled: tangled.v assembly
 dump: dump.txt
 	gtkwave dump.txt
 
-assembly: tangled.aik testAssembly branchTest memoryTest
+assembly: tangled.aik testAssembly
 	./aik tangled.aik testAssembly
 	./aik tangled.aik QatTest
 
