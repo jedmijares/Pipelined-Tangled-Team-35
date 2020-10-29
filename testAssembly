@@ -1,7 +1,7 @@
 ; test all instructions
 
 	.text
-  lex $1, 0x5
+  lex $1, 0x4
   jumpr $1
   sys
   sys
