@@ -11,3 +11,7 @@ assembly: tangled.aik testAssembly
 
 clean:
 	rm *.text *.data tangled
+
+pinky: pipelinePinky.v
+	iverilog -o pinky pipelinePinky.v
+	vvp pinky
