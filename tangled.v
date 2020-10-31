@@ -39,7 +39,7 @@
 `define OP8bits [15:8]
 `define OP4bits [15:12]
 
-// `define OPoneReg   4'h1
+`define OPoneReg   4'h1
 `define OPjumpr    8'h10
 `define OPneg      8'h11 //
 `define OPnegf     8'h12 //
@@ -50,7 +50,7 @@
 `define OPlex      4'h4
 `define OPlhi      4'h5
 
-// `define OPnorms    4'h6
+`define OPnorms    4'h6
 `define OPadd      8'h60 //
 `define OPmul      8'h61 //
 `define OPslt      8'h62 //
@@ -59,7 +59,7 @@
 `define OPxor      8'h65 //
 `define OPshift    8'h66 //
 
-// `define OPfloats   4'h7
+`define OPfloats   4'h7
 `define OPaddf     8'h70 //
 `define OPmulf     8'h71 //
 `define OPsltf     8'h72 //
@@ -67,27 +67,27 @@
 `define OPfloat    8'h78// 
 `define OPint      8'h79//
 
-// `define OPmem      4'h7
+`define OPmem      4'h7
 `define OPcopy     8'h7a
 `define OPload     8'h7b
 `define OPstore    8'h7c //
 
-// `define DecodeOrNOP     4'h8
+`define DecodeOrNOP     4'h8
 `define Decode     8'h80
 `define NOP        16'h8100
 
-// `define OPsingleQ  4'h9
+`define OPsingleQ  4'h9
 `define OPnotQ     8'h90
 `define OPoneQ     8'h91
 `define OPzeroQ    8'h92
 
 `define OPhadQ     4'ha
 
-// `define OPtwoQ     4'hb
+`define OPtwoQ     4'hb
 `define OPcnotQ    8'hb0
 `define OPswapQ    8'hb1
 
-// `define OPthreeQ   4'hc
+`define OPthreeQ   4'hc
 `define OPccnotQ   8'hc0
 `define OPcswapQ   8'hc1
 `define OPandQ     8'hc3
@@ -426,6 +426,133 @@ module processor(halt, reset, clk);
       ir1 <= ir0;
     end
   end
+
+  // stage 2: ALU, data memory access, store in register
+  always @(posedge clk) begin
+    if ((ir1 == `NOP)) begin
+      // condition says nothing happens
+      jump <= 0;
+    end else begin
+      // let the instruction execute
+      case (ir1 `OP4bits)
+        `OPsys: 
+            begin
+              halt <= 1;
+              s <= `Start;
+            end
+            
+          // Start Qat
+          `OPsingleQ:
+            begin
+              case (s2)
+                `OPnotQ: begin s <= `OPsys; end
+                `OPoneQ: begin s <= `OPsys; end
+                `OPzeroQ: begin s <= `OPsys; end
+              endcase
+            end
+
+          `OPhadQ: begin s <= `OPsys; end
+
+          `OPtwoQ:
+            begin
+              pc <= pc + 1;
+              case (s2)
+                `OPcnotQ: begin s <= `OPsys; end
+                `OPswapQ: begin s <= `OPsys; end
+              endcase
+            end
+
+          `OPthreeQ:
+            begin
+              pc <= pc + 1;
+              case (s2)
+                `OPccnotQ: begin s <= `OPsys; end
+                `OPcswapQ: begin s <= `OPsys; end
+                `OPandQ: begin s <= `OPsys; end
+                `OPorQ: begin s <= `OPsys; end
+                `OPxorQ: begin s <= `OPsys; end
+              endcase
+            end
+
+          `OPmeasQ: begin s <= `OPsys; end
+
+          `OPnextQ: begin s <= `OPsys; end
+          // End Qat
+
+          `OPoneReg: 
+            begin
+              case (s2)
+                `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
+                `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
+                `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
+                `OPnot:   begin r[ir `DestReg] <= ~r[ir `DestReg]; s <= `Start; end
+              endcase
+            end
+
+          `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+
+          `OPlex: 
+          begin 
+            r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
+          end
+
+          `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
+
+          `OPnorms: 
+            begin
+              case (s2)
+                `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
+                `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
+                `OPslt: 
+                begin 
+                  // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
+                  sltCheck = r[ir `DestReg] - r[ir `SourceReg];
+                  r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
+                end
+                `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
+                `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
+                `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
+                `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
+                end
+              endcase
+            end
+      
+          `OPfloats:
+            begin
+              case (s2)
+                `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
+                `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
+                `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
+                `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
+                `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
+                `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
+                `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
+                `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
+                `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
+              endcase
+            end
+
+
+        default: halt <= 1; // make it stop
+      endcase
+
+      // update z flag if we should
+      // if (setsz(ir1)) zreg <= (res == 0);
+
+      // put result in rd if we should
+      if (setsrd(ir1)) begin
+        if (ir1 `RD == 15) begin
+          jump <= 1;
+          target <= res;
+        end else begin
+          r[ir1 `RD] <= res;
+          jump <= 0;
+        end
+      end else jump <= 0;
+    end
+  end
+// endcase
 
   // always @(posedge clk) begin
   //   case (s)
