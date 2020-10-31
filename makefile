@@ -1,3 +1,7 @@
+# pipelineTangled: pipelineTangled.v assembly
+# 	iverilog -o pipelineTangled pipelineTangled.v
+# 	vvp pipelineTangled
+
 tangled: tangled.v assembly
 	iverilog -o tangled tangled.v
 	vvp tangled

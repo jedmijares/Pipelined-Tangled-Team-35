@@ -1,3 +1,15 @@
+// basic sizes of things
+`define DATA	[15:0]
+`define ADDR	[15:0]
+`define SIZE	[65535:0]
+`define INST	[15:0]
+`define CC	[15:14]
+`define OP	[14:9]
+`define IORR	[8]
+`define RD	[7:4]
+`define RN	[3:0]
+`define REGS    [15:0]
+
 // Multi-cycle Tangled Implementation
 
 // basic sizes of things
@@ -24,58 +36,63 @@
 
 `define OPsys      4'h0
 
-`define OPoneReg   4'h1
-`define OPjumpr    4'h0
-`define OPneg      4'h1
-`define OPnegf     4'h2
-`define OPnot      4'h3
+`define OP8bits [15:8]
+`define OP4bits [15:12]
+
+// `define OPoneReg   4'h1
+`define OPjumpr    8'h10
+`define OPneg      8'h11 //
+`define OPnegf     8'h12 //
+`define OPnot      8'h13 //
 
 `define OPbrf      4'h2
 `define OPbrt      4'h3
 `define OPlex      4'h4
 `define OPlhi      4'h5
 
-`define OPnorms    4'h6
-`define OPadd      4'h0
-`define OPmul      4'h1
-`define OPslt      4'h2
-`define OPand      4'h3
-`define OPor	   4'h4
-`define OPxor      4'h5
-`define OPshift    4'h6
+// `define OPnorms    4'h6
+`define OPadd      8'h60 //
+`define OPmul      8'h61 //
+`define OPslt      8'h62 //
+`define OPand      8'h63 //
+`define OPor	     8'h64 //
+`define OPxor      8'h65 //
+`define OPshift    8'h66 //
 
-`define OPfloats   4'h7
-`define OPaddf     4'h0
-`define OPmulf     4'h1
-`define OPsltf     4'h2
-`define OPrecip    4'h4
-`define OPfloat    4'h8
-`define OPint      4'h9
+// `define OPfloats   4'h7
+`define OPaddf     8'h70 //
+`define OPmulf     8'h71 //
+`define OPsltf     8'h72 //
+`define OPrecip    8'h74 //
+`define OPfloat    8'h78// 
+`define OPint      8'h79//
 
-`define OPmem      4'h7
-`define OPcopy     4'ha
-`define OPload     4'hb
-`define OPstore    4'hc
+// `define OPmem      4'h7
+`define OPcopy     8'h7a
+`define OPload     8'h7b
+`define OPstore    8'h7c //
 
-`define Decode     4'h8
+// `define DecodeOrNOP     4'h8
+`define Decode     8'h80
+`define NOP        16'h8100
 
-`define OPsingleQ  4'h9
-`define OPnotQ     4'h0
-`define OPoneQ     4'h1
-`define OPzeroQ    4'h2
+// `define OPsingleQ  4'h9
+`define OPnotQ     8'h90
+`define OPoneQ     8'h91
+`define OPzeroQ    8'h92
 
 `define OPhadQ     4'ha
 
-`define OPtwoQ     4'hb
-`define OPcnotQ    4'h0
-`define OPswapQ    4'h1
+// `define OPtwoQ     4'hb
+`define OPcnotQ    8'hb0
+`define OPswapQ    8'hb1
 
-`define OPthreeQ   4'hc
-`define OPccnotQ   4'h0
-`define OPcswapQ   4'h1
-`define OPandQ     4'h3
-`define OPorQ      4'h4
-`define OPxorQ     4'h5
+// `define OPthreeQ   4'hc
+`define OPccnotQ   8'hc0
+`define OPcswapQ   8'hc1
+`define OPandQ     8'hc3
+`define OPorQ      8'hc4
+`define OPxorQ     8'hc5
 
 `define Start      4'hd
 
@@ -231,8 +248,15 @@ module processor(halt, reset, clk);
   reg `WORD text `MEMSIZE; // instruction memory
   reg `WORD data `MEMSIZE; // data memory
   reg `WORD pc = 0;
+  reg `WORD tpc, pc0, pc1;
   reg `WORD ir;
-  reg `WORD nextInstruction;
+  reg `WORD ir0, ir1;
+  // reg `WORD nextInstruction;
+  reg `DATA im0, rd1, rn1, res;
+  reg `WORD target;	// jump target
+  reg jump;		// are we jumping?
+  wire pendpc;		// pc update pending?
+  reg wait1;		// need to stall in stage 1?
   reg `WORD sltCheck;
   reg `STATE s, s2;
 
@@ -249,126 +273,275 @@ module processor(halt, reset, clk);
     halt <= 0;
     pc <= 0;
     s <= `Start;
+    ir0 = `NOP;
+    ir1 = `NOP;
     $readmemh("testAssembly.text", text);
     $readmemh("testAssembly.data", data);
+    jump = 0;
     r[15] = 16'hffff; // initialize stack pointer
   end
 
+  function setsrd;
+    input `WORD inst;
+    setsrd = ((
+      inst `OP8bits == `OPneg ||
+      inst `OP8bits == `OPnegf ||
+      inst `OP8bits == `OPnot ||
+      inst `OP8bits == `OPadd ||
+      inst `OP8bits == `OPmul ||
+      inst `OP8bits == `OPslt ||
+      inst `OP8bits == `OPand ||
+      inst `OP8bits == `OPor ||
+      inst `OP8bits == `OPxor ||
+      inst `OP8bits == `OPshift ||
+      inst `OP8bits == `OPaddf ||
+      inst `OP8bits == `OPmulf ||
+      inst `OP8bits == `OPsltf ||
+      inst `OP8bits == `OPrecip ||
+      inst `OP8bits == `OPfloat ||
+      inst `OP8bits == `OPint ||
+      inst `OP8bits == `OPcopy ||
+      inst `OP8bits == `OPload ||
+      inst `OP4bits == `OPlex ||
+      inst `OP4bits == `OPlhi
+    ));
+  endfunction
+
+  // function setspc;
+  // input `INST inst;
+  // setspc = ((inst `RD == 15) && setsrd(inst));
+  // endfunction
+
+  // function setsz;
+  // input `INST inst;
+  // setsz = ((inst `CC == `S) && setsrd(inst));
+  // endfunction
+
+  // function iscond;
+  // input `INST inst;
+  // iscond = ((inst `CC == `NE) || (inst `CC == `EQ));
+  // endfunction
+
+  // function usesim;
+  // input `INST inst;
+  // usesim = ((inst `IORR) && (inst `OP <= `OPSTR));
+  // endfunction
+
+  function usesrd;
+    input `WORD inst;
+    usesrd = ((
+      inst `OP8bits == `OPneg ||
+      inst `OP8bits == `OPnegf ||
+      inst `OP8bits == `OPnot ||
+      inst `OP8bits == `OPadd ||
+      inst `OP8bits == `OPmul ||
+      inst `OP8bits == `OPslt ||
+      inst `OP8bits == `OPand ||
+      inst `OP8bits == `OPor ||
+      inst `OP8bits == `OPxor ||
+      inst `OP8bits == `OPshift ||
+      inst `OP8bits == `OPaddf ||
+      inst `OP8bits == `OPmulf ||
+      inst `OP8bits == `OPsltf ||
+      inst `OP8bits == `OPrecip ||
+      inst `OP8bits == `OPfloat ||
+      inst `OP8bits == `OPint ||
+      inst `OP8bits == `OPstore
+    ));
+  endfunction
+
+  function usesrn;
+    input `WORD inst;
+    usesrn = ((
+      inst `OP8bits == `OPadd ||
+      inst `OP8bits == `OPmul ||
+      inst `OP8bits == `OPslt ||
+      inst `OP8bits == `OPand ||
+      inst `OP8bits == `OPor ||
+      inst `OP8bits == `OPxor ||
+      inst `OP8bits == `OPshift ||
+      inst `OP8bits == `OPaddf ||
+      inst `OP8bits == `OPmulf ||
+      inst `OP8bits == `OPsltf ||
+      inst `OP8bits == `OPrecip ||
+      inst `OP8bits == `OPfloat ||
+      inst `OP8bits == `OPint ||
+      inst `OP8bits == `OPstore
+    ));
+  endfunction
+
+  // // pending PC update?
+  // assign pendpc = (setspc(ir0) || setspc(ir1));
+
+  // stage 0: instruction fetch and immediate extend
   always @(posedge clk) begin
-    case (s)
-      `Start: 
-        begin 
-          ir <= text[pc]; 
-          nextInstruction <= text[pc + 1];
-          s <= `Decode;
-        end 
-      
-      `Decode: 
-        begin
-          pc <= pc + 1;
-          s <= ir `Op0;
-          s2 <= ir `Reg0;
-        end
+    tpc = (jump ? target : pc);
 
-      `OPsys: 
-        begin
-          halt <= 1;
-          s <= `Start;
-        end
-        
-      // Start Qat
-      `OPsingleQ:
-        begin
-          case (s2)
-            `OPnotQ: begin s <= `OPsys; end
-            `OPoneQ: begin s <= `OPsys; end
-            `OPzeroQ: begin s <= `OPsys; end
-          endcase
-        end
+    if (wait1) begin
+      // blocked by stage 1, so should not have a jump, but...
+      pc <= tpc;
+    end else begin
+      // not blocked by stage 1
+      ir = text[tpc];
 
-      `OPhadQ: begin s <= `OPsys; end
-
-      `OPtwoQ:
-        begin
-          pc <= pc + 1;
-          case (s2)
-            `OPcnotQ: begin s <= `OPsys; end
-            `OPswapQ: begin s <= `OPsys; end
-          endcase
-        end
-
-      `OPthreeQ:
-        begin
-          pc <= pc + 1;
-          case (s2)
-            `OPccnotQ: begin s <= `OPsys; end
-            `OPcswapQ: begin s <= `OPsys; end
-            `OPandQ: begin s <= `OPsys; end
-            `OPorQ: begin s <= `OPsys; end
-            `OPxorQ: begin s <= `OPsys; end
-          endcase
-        end
-
-      `OPmeasQ: begin s <= `OPsys; end
-
-      `OPnextQ: begin s <= `OPsys; end
-      // End Qat
-
-      `OPoneReg: 
-        begin
-          case (s2)
-            `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
-            `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
-            `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
-            `OPnot:   begin r[ir `DestReg] <= ~r[ir `DestReg]; s <= `Start; end
-          endcase
-        end
-
-      `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-      `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-
-      `OPlex: 
-      begin 
-        r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
+      if (pendpc) begin
+        // waiting... pc doesn't change
+        ir0 <= `NOP;
+        pc <= tpc;
+      end // else begin
+        // if (ir[13:12] == 0) begin
+        //   // // PRE operation
+        //   // havepre <= 1;
+        //   // prefix <= ir[11:0];
+        //   ir0 <= `NOP;
+        // end else begin
+          // if (usesim(ir)) begin
+          //   // extend immediate
+          //   // im0 <= {{12{ir[3]}}, ir `RN};
+          //   // havepre <= 0;
+          
+          // ir0 <= ir;
+          // end
+        //   pc <= tpc + 1;
+        // end
+        pc0 <= tpc;
       end
-
-      `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
-
-      `OPnorms: 
-        begin
-          case (s2)
-            `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
-            `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
-            `OPslt: 
-            begin 
-              // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
-              sltCheck = r[ir `DestReg] - r[ir `SourceReg];
-              r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
-            end
-            `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
-            `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
-            `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
-            `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
-            end
-          endcase
-        end
-   
-      `OPfloats:
-        begin
-          case (s2)
-            `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
-            `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
-            `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
-            `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
-            `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
-            `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
-            `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
-            `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
-            `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
-          endcase
-        end
-    endcase
   end
+
+  // stage 1: register read
+  always @(posedge clk) begin
+    if ((ir0 != `NOP) &&
+        setsrd(ir1) &&
+        ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+        (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+      // stall waiting for register value
+      wait1 = 1;
+      ir1 <= `NOP;
+    end else begin
+      // all good, get operands (even if not needed)
+      wait1 = 0;
+      rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
+      // rn1 <= (usesim(ir0) ? im0 :
+      //         ((ir0 `RN == 15) ? pc0 : r[ir0 `RN]));
+      ir1 <= ir0;
+    end
+  end
+
+  // always @(posedge clk) begin
+  //   case (s)
+  //     `Start: 
+  //       begin 
+  //         ir <= text[pc]; 
+  //         // nextInstruction <= text[pc + 1];
+  //         s <= `Decode;
+  //       end 
+      
+  //     `Decode: 
+  //       begin
+  //         pc <= pc + 1;
+  //         s <= ir `Op0;
+  //         s2 <= ir `Reg0;
+  //       end
+
+  //     `OPsys: 
+  //       begin
+  //         halt <= 1;
+  //         s <= `Start;
+  //       end
+        
+  //     // Start Qat
+  //     `OPsingleQ:
+  //       begin
+  //         case (s2)
+  //           `OPnotQ: begin s <= `OPsys; end
+  //           `OPoneQ: begin s <= `OPsys; end
+  //           `OPzeroQ: begin s <= `OPsys; end
+  //         endcase
+  //       end
+
+  //     `OPhadQ: begin s <= `OPsys; end
+
+  //     `OPtwoQ:
+  //       begin
+  //         pc <= pc + 1;
+  //         case (s2)
+  //           `OPcnotQ: begin s <= `OPsys; end
+  //           `OPswapQ: begin s <= `OPsys; end
+  //         endcase
+  //       end
+
+  //     `OPthreeQ:
+  //       begin
+  //         pc <= pc + 1;
+  //         case (s2)
+  //           `OPccnotQ: begin s <= `OPsys; end
+  //           `OPcswapQ: begin s <= `OPsys; end
+  //           `OPandQ: begin s <= `OPsys; end
+  //           `OPorQ: begin s <= `OPsys; end
+  //           `OPxorQ: begin s <= `OPsys; end
+  //         endcase
+  //       end
+
+  //     `OPmeasQ: begin s <= `OPsys; end
+
+  //     `OPnextQ: begin s <= `OPsys; end
+  //     // End Qat
+
+  //     `OPoneReg: 
+  //       begin
+  //         case (s2)
+  //           `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
+  //           `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
+  //           `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
+  //           `OPnot:   begin r[ir `DestReg] <= ~r[ir `DestReg]; s <= `Start; end
+  //         endcase
+  //       end
+
+  //     `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+  //     `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+
+  //     `OPlex: 
+  //     begin 
+  //       r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
+  //     end
+
+  //     `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
+
+  //     `OPnorms: 
+  //       begin
+  //         case (s2)
+  //           `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
+  //           `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
+  //           `OPslt: 
+  //           begin 
+  //             // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
+  //             sltCheck = r[ir `DestReg] - r[ir `SourceReg];
+  //             r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
+  //           end
+  //           `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
+  //           `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
+  //           `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
+  //           `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
+  //           end
+  //         endcase
+  //       end
+   
+  //     `OPfloats:
+  //       begin
+  //         case (s2)
+  //           `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
+  //           `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
+  //           `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
+  //           `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
+  //           `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
+  //           `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
+  //           `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
+  //           `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
+  //           `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
+  //         endcase
+  //       end
+  //   endcase
+  // end
 endmodule
 
 module testbench;
@@ -378,7 +551,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(1, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.r[15], PE.data[0], PE.data[1], PE.data[2], PE.s, PE.s2, PE.ir, PE.halt, PE.nextInstruction); // would normally trace 0, PE
+  $dumpvars(1, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.r[15], PE.data[0], PE.data[1], PE.data[2], PE.s, PE.s2, PE.ir, PE.halt); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
