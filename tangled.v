@@ -1,14 +1,14 @@
 // basic sizes of things
-`define DATA	[15:0]
-`define ADDR	[15:0]
-`define SIZE	[65535:0]
-`define INST	[15:0]
-`define CC	[15:14]
-`define OP	[14:9]
-`define IORR	[8]
-`define RD	[7:4]
-`define RN	[3:0]
-`define REGS    [15:0]
+`define DATA [15:0]
+`define ADDR [15:0]
+`define SIZE [65535:0]
+`define INST [15:0]
+`define CC [15:14]
+`define OP [14:9]
+`define IORR [8]
+`define RD [7:4]
+`define RN [3:0]
+`define REGS [15:0]
 
 // Multi-cycle Tangled Implementation
 
