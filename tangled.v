@@ -678,7 +678,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(1, PE.pc, PE.r[0], PE.r[1], PE.r[2], PE.r[15], PE.data[0], PE.data[1], PE.data[2], PE.s, PE.s2, PE.ir, PE.halt); // would normally trace 0, PE
+  $dumpvars(0, PE); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
