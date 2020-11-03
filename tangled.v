@@ -484,15 +484,15 @@ module processor(halt, reset, clk);
           `OPoneReg: 
             begin
               case (ir1 [15:8])
-                `OPjumpr: begin pc <= r[ir1 `DestReg]; s <= `Start; end
+                `OPjumpr: begin tpc <= r[ir1 `DestReg]; s <= `Start; end
                 `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; s <= `Start; end
                 `OPnegf:  begin r[ir1 `DestReg] <= negfRes; s <= `Start; end 
                 `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; s <= `Start; end
               endcase
             end
 
-          `OPbrf: begin pc1 <= pc1 + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-          `OPbrt: begin pc1 <= pc1 + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrf: begin tpc <= tpc + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrt: begin tpc <= tpc + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
 
           `OPlex: 
           begin 
