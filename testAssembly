@@ -1,17 +1,11 @@
 ; test all instructions
 
 	.text
-  lex $1, 0x4
   lex $1, 0x1
   lex $2, 0x4
+  shift $1, $2
   lex $0, 0x10
-  add $0, $1
-  lex $1, 0x4
-  lex $1, 0x1
-  lex $2, 0x4
-  lex $0, 0x10
-  sys
-pass:
+  xor $0, $1
   lex $2, 0xFC
   shift $1, $2
   lex $0, 0x1
@@ -23,13 +17,13 @@ pass2:
   load $2, 5 ; load $2 with 5
   xor $1, $2 ; check if $1 and $2 are identical
   brf $1, pass3
-  sys
+  ; sys
 pass3:
   not $1 ; $1 should become 0xFFFF
   load $2, 0xFFFF ; load $2 with 0xFFFF
   xor $1, $2 ; check if $1 and $2 are identical
   brf $1, pass4
-  sys
+  ; sys
 pass4:
 startFloats:
   lex $1, 0x80
@@ -41,7 +35,7 @@ startFloats:
 	addf $1, $2
 	xor $1, $3
 	brf $1, goodAdd
-	sys
+	; sys
 goodAdd:
 	lex $1, 0x01
 	lex $2, 0x80
@@ -49,7 +43,7 @@ goodAdd:
 	float $1
 	xor $1, $2
 	brf $1, goodFloat
-	sys
+	; sys
 goodFloat:
 	lex $1, 0x80
 	lhi $1, 0x3f
@@ -57,7 +51,7 @@ goodFloat:
 	int $1
 	xor $1, $2
 	brf $1, goodInt
-	sys
+	; sys
 goodInt:
 	lex $1, 0x00
 	lhi $1, 0x40
@@ -68,7 +62,7 @@ goodInt:
 	xor $1, $3
 	not $1
 	brt $1, goodMult
-	sys
+	; sys
 goodMult:
 	lex $1, 0x80
 	lhi $1, 0x3f
@@ -77,7 +71,7 @@ goodMult:
 	negf $1
 	xor $1, $2
 	brf $1, goodNegf
-	sys
+	; sys
 goodNegf:
 	lex $1, 0x00
 	lhi $1, 0x40
@@ -86,7 +80,7 @@ goodNegf:
 	recip $1
 	xor $1, $2
 	brf $1, goodRecip
-	sys
+	; sys
 goodRecip:
 	lex $1, 0x80
 	lhi $1, 0x3f
@@ -94,7 +88,7 @@ goodRecip:
 	lhi $2, 0x40
 	sltf $1, $2
 	brt $1, goodSltf
-	sys
+	; sys
 goodSltf:
 	lex $1, 0x80
 	lhi $1, 0x3f
@@ -104,31 +98,31 @@ goodSltf:
 	load $3, $2
 	xor $1, $3
 	brf $1, goodLoadStore
-	sys
+	; sys
 goodLoadStore:
   lex $1, 0x5
   lex $2, 0x6
   slt $1, $2
   brt $1, sltPosTrue
-  sys
+  ; sys
 sltPosTrue:
   lex $1, 0x5
   lex $2, 0x6
   slt $2, $1
   brf $2, sltPosFalse
-  sys
+  ; sys
 sltPosFalse:
   lex $1, 0xFF
   lex $2, 0x6
   slt $2, $1
   brf $2, sltNegFalse
-  sys
+  ; sys
 sltNegFalse:
   lex $1, 0xFF
   lex $2, 0x6
   slt $1, $2
   brt $1, sltNegTrue
-  sys
+  ; sys
 sltNegTrue:
   lex $1, 0x3
   lex $2, 0x4
@@ -136,7 +130,7 @@ sltNegTrue:
   lex $0, 0x7
   xor $1, $0
   brf $1, addPass
-  sys
+  ; sys
 addPass:
   lex $1, 0x3
   lex $2, 0x2
@@ -144,7 +138,7 @@ addPass:
   lex $0, 0x6
   xor $1, $0
   brf $1, mulPass
-  sys
+  ; sys
 mulPass:
   lex $1, 0xB
   lex $2, 0x9
@@ -152,7 +146,7 @@ mulPass:
   lex $0, 0x9
   xor $1, $0
   brf $1, andPass
-  sys
+  ; sys
 andPass:
   lex $1, 0xB
   lex $2, 0x1
@@ -160,7 +154,7 @@ andPass:
   lex $0, 0xB
   xor $1, $0
   brf $1, orPass
-  sys
+  ; sys
 orPass:
   lex $1, 0x0
   lex $2, 0x1
@@ -176,10 +170,10 @@ loop:
   store $1, $2 ; store 0xFFFF at location 0
   copy $1, $2 ; copy 0x0000 into reg 1
   brf $1, copyPass ; halt if any bit of reg 1 is 1
-  sys
+  ; sys
 copyPass:
   load $1, $2 ; load 0xFFFF into reg 1
   brt $1, loadPass; halt if reg 1 is still 0
-  sys
+  ; sys
 loadPass:
-  sys
+  ; sys
