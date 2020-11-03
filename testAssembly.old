@@ -2,14 +2,15 @@
 
 	.text
   lex $1, 0x4
+  jumpr $1
+  sys
+  sys
   lex $1, 0x1
   lex $2, 0x4
+  shift $1, $2
   lex $0, 0x10
-  add $0, $1
-  lex $1, 0x4
-  lex $1, 0x1
-  lex $2, 0x4
-  lex $0, 0x10
+  xor $0, $1
+  brf $0, pass
   sys
 pass:
   lex $2, 0xFC

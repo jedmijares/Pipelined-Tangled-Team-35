@@ -254,9 +254,9 @@ module processor(halt, reset, clk);
   // reg `WORD nextInstruction;
   reg `DATA im0, rd1, rn1, res;
   reg `WORD target;	// jump target
-  reg jump;		// are we jumping?
-  wire pendpc;		// pc update pending?
-  reg wait1;		// need to stall in stage 1?
+  reg jump; // are we jumping?
+  wire pendpc; // pc update pending?
+  reg wait1; // need to stall in stage 1?
   reg `WORD sltCheck;
   reg `STATE s, s2;
 
@@ -400,9 +400,9 @@ module processor(halt, reset, clk);
           //   // im0 <= {{12{ir[3]}}, ir `RN};
           //   // havepre <= 0;
           
-          // ir0 <= ir;
+          ir0 <= ir;
           // end
-        //   pc <= tpc + 1;
+          pc <= tpc + 1;
         // end
         pc0 <= tpc;
       end
@@ -410,17 +410,19 @@ module processor(halt, reset, clk);
 
   // stage 1: register read
   always @(posedge clk) begin
-    if ((ir0 != `NOP) &&
-        setsrd(ir1) &&
-        ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-        (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
-      // stall waiting for register value
-      wait1 = 1;
-      ir1 <= `NOP;
-    end else begin
+    // if ((ir0 != `NOP) &&
+    //     setsrd(ir1) &&
+    //     ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+    //     (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+    //   // stall waiting for register value
+    //   wait1 = 1;
+    //   ir1 <= `NOP;
+    // end else 
+    begin
       // all good, get operands (even if not needed)
       wait1 = 0;
-      rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
+      // rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
+      rd1 <= r[ir0 `RD];
       // rn1 <= (usesim(ir0) ? im0 :
       //         ((ir0 `RN == 15) ? pc0 : r[ir0 `RN]));
       ir1 <= ir0;
@@ -438,50 +440,50 @@ module processor(halt, reset, clk);
         `OPsys: 
             begin
               halt <= 1;
-              s <= `Start;
+              // s <= `Start;
             end
             
           // Start Qat
           `OPsingleQ:
             begin
-              case (s2)
-                `OPnotQ: begin s <= `OPsys; end
-                `OPoneQ: begin s <= `OPsys; end
-                `OPzeroQ: begin s <= `OPsys; end
+              case (ir1 [11:8])
+                `OPnotQ: begin halt <= 1; end
+                `OPoneQ: begin halt <= 1; end
+                `OPzeroQ: begin halt <= 1; end
               endcase
             end
 
-          `OPhadQ: begin s <= `OPsys; end
+          `OPhadQ: begin halt <= 1; end
 
           `OPtwoQ:
             begin
               pc <= pc + 1;
-              case (s2)
-                `OPcnotQ: begin s <= `OPsys; end
-                `OPswapQ: begin s <= `OPsys; end
+              case (ir1 [11:8])
+                `OPcnotQ: begin halt <= 1; end
+                `OPswapQ: begin halt <= 1; end
               endcase
             end
 
           `OPthreeQ:
             begin
               pc <= pc + 1;
-              case (s2)
-                `OPccnotQ: begin s <= `OPsys; end
-                `OPcswapQ: begin s <= `OPsys; end
-                `OPandQ: begin s <= `OPsys; end
-                `OPorQ: begin s <= `OPsys; end
-                `OPxorQ: begin s <= `OPsys; end
+              case (ir1 [11:8])
+                `OPccnotQ: begin halt <= 1; end
+                `OPcswapQ: begin halt <= 1; end
+                `OPandQ: begin halt <= 1; end
+                `OPorQ: begin halt <= 1; end
+                `OPxorQ: begin halt <= 1; end
               endcase
             end
 
-          `OPmeasQ: begin s <= `OPsys; end
+          `OPmeasQ: begin halt <= 1; end
 
-          `OPnextQ: begin s <= `OPsys; end
+          `OPnextQ: begin halt <= 1; end
           // End Qat
 
           `OPoneReg: 
             begin
-              case (s2)
+              case (ir1 [11:8])
                 `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
                 `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
                 `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
@@ -494,33 +496,33 @@ module processor(halt, reset, clk);
 
           `OPlex: 
           begin 
-            r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
+            r[ir1 `SECOND4] <= {{8{ir1[7]}}, ir1 `BOTTOM8}; s <= `Start; 
           end
 
           `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
 
           `OPnorms: 
             begin
-              case (s2)
-                `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
-                `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
+              case (ir1 [11:8])
+                `OPadd: begin r[ir1 `DestReg] <= r[ir1 `DestReg] + r[ir1 `SourceReg]; s <= `Start; end
+                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * r[ir1 `SourceReg]; s <= `Start; end
                 `OPslt: 
                 begin 
-                  // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
-                  sltCheck = r[ir `DestReg] - r[ir `SourceReg];
-                  r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
+                  // r[ir1 `DestReg] <= (r[ir1 `DestReg] < r[ir1 `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
+                  sltCheck = r[ir1 `DestReg] - r[ir1 `SourceReg];
+                  r[ir1 `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
                 end
-                `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
-                `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
-                `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
-                `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
+                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & r[ir1 `SourceReg]; s <= `Start; end
+                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | r[ir1 `SourceReg]; s <= `Start; end
+                `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ r[ir1 `SourceReg]; s <= `Start; end
+                `OPshift: begin r[ir1 `DestReg] <= ((r[ir1 `SourceReg][15] == 0) ? (r[ir1 `DestReg] << r[ir1 `SourceReg]) : (r[ir1 `DestReg] >> -r[ir1 `SourceReg])); s <= `Start;
                 end
               endcase
             end
       
           `OPfloats:
             begin
-              case (s2)
+              case (ir1 [11:8])
                 `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
                 `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
                 `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
@@ -540,16 +542,16 @@ module processor(halt, reset, clk);
       // update z flag if we should
       // if (setsz(ir1)) zreg <= (res == 0);
 
-      // put result in rd if we should
-      if (setsrd(ir1)) begin
-        if (ir1 `RD == 15) begin
-          jump <= 1;
-          target <= res;
-        end else begin
-          r[ir1 `RD] <= res;
-          jump <= 0;
-        end
-      end else jump <= 0;
+      // // put result in rd if we should
+      // if (setsrd(ir1)) begin
+      //   if (ir1 `RD == 15) begin
+      //     jump <= 1;
+      //     target <= res;
+      //   end else begin
+      //     r[ir1 `RD] <= res;
+      //     jump <= 0;
+      //   end
+      // end else jump <= 0;
     end
   end
 // endcase
@@ -567,7 +569,7 @@ module processor(halt, reset, clk);
   //       begin
   //         pc <= pc + 1;
   //         s <= ir `Op0;
-  //         s2 <= ir `Reg0;
+  //         ir1 [11:8] <= ir `Reg0;
   //       end
 
   //     `OPsys: 
@@ -579,7 +581,7 @@ module processor(halt, reset, clk);
   //     // Start Qat
   //     `OPsingleQ:
   //       begin
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPnotQ: begin s <= `OPsys; end
   //           `OPoneQ: begin s <= `OPsys; end
   //           `OPzeroQ: begin s <= `OPsys; end
@@ -591,7 +593,7 @@ module processor(halt, reset, clk);
   //     `OPtwoQ:
   //       begin
   //         pc <= pc + 1;
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPcnotQ: begin s <= `OPsys; end
   //           `OPswapQ: begin s <= `OPsys; end
   //         endcase
@@ -600,7 +602,7 @@ module processor(halt, reset, clk);
   //     `OPthreeQ:
   //       begin
   //         pc <= pc + 1;
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPccnotQ: begin s <= `OPsys; end
   //           `OPcswapQ: begin s <= `OPsys; end
   //           `OPandQ: begin s <= `OPsys; end
@@ -616,7 +618,7 @@ module processor(halt, reset, clk);
 
   //     `OPoneReg: 
   //       begin
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
   //           `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
   //           `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
@@ -636,7 +638,7 @@ module processor(halt, reset, clk);
 
   //     `OPnorms: 
   //       begin
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
   //           `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
   //           `OPslt: 
@@ -655,7 +657,7 @@ module processor(halt, reset, clk);
    
   //     `OPfloats:
   //       begin
-  //         case (s2)
+  //         case (ir1 [11:8])
   //           `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
   //           `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
   //           `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
@@ -678,7 +680,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(0, PE); // would normally trace 0, PE
+  $dumpvars(0, PE, PE.r[0], PE.r[1], PE.r[2]); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
