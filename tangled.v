@@ -267,7 +267,7 @@ module processor(halt, reset, clk);
   frecip myFRec(recipRes, r[ir `THIRD4]);
   f2i myFloToInt(intRes ,r[ir `THIRD4]);
   i2f myIntToFlo(floatRes, r[ir `THIRD4]); 
-  negf myNegF(negfRes,    r[ir `THIRD4]);
+  negf myNegF(negfRes, r[ir `THIRD4]);
 
   always @(posedge reset) begin
     halt <= 0;
@@ -307,10 +307,14 @@ module processor(halt, reset, clk);
     ));
   endfunction
 
-  // function setspc;
-  // input `INST inst;
-  // setspc = ((inst `RD == 15) && setsrd(inst));
-  // endfunction
+  function setspc;
+    input `INST inst;
+    setspc = (
+      inst `OP8bits == `OPjumpr ||
+      inst `OP4bits == `OPbrf ||
+      inst `OP4bits == `OPbrt
+    );
+  endfunction
 
   // function setsz;
   // input `INST inst;
@@ -329,7 +333,7 @@ module processor(halt, reset, clk);
 
   function usesrd;
     input `WORD inst;
-    usesrd = ((
+    usesrd = (
       inst `OP8bits == `OPneg ||
       inst `OP8bits == `OPnegf ||
       inst `OP8bits == `OPnot ||
@@ -347,12 +351,12 @@ module processor(halt, reset, clk);
       inst `OP8bits == `OPfloat ||
       inst `OP8bits == `OPint ||
       inst `OP8bits == `OPstore
-    ));
+    );
   endfunction
 
   function usesrn;
     input `WORD inst;
-    usesrn = ((
+    usesrn = (
       inst `OP8bits == `OPadd ||
       inst `OP8bits == `OPmul ||
       inst `OP8bits == `OPslt ||
@@ -367,11 +371,11 @@ module processor(halt, reset, clk);
       inst `OP8bits == `OPfloat ||
       inst `OP8bits == `OPint ||
       inst `OP8bits == `OPstore
-    ));
+    );
   endfunction
 
-  // // pending PC update?
-  // assign pendpc = (setspc(ir0) || setspc(ir1));
+  // pending PC update?
+  assign pendpc = (setspc(ir0) || setspc(ir1));
 
   // stage 0: instruction fetch and immediate extend
   always @(posedge clk) begin
@@ -388,7 +392,7 @@ module processor(halt, reset, clk);
         // waiting... pc doesn't change
         ir0 <= `NOP;
         pc <= tpc;
-      end // else begin
+      end else begin
         // if (ir[13:12] == 0) begin
         //   // // PRE operation
         //   // havepre <= 1;
@@ -401,7 +405,7 @@ module processor(halt, reset, clk);
           //   // havepre <= 0;
           
           ir0 <= ir;
-          // end
+          end
           pc <= tpc + 1;
         // end
         pc0 <= tpc;
@@ -410,21 +414,20 @@ module processor(halt, reset, clk);
 
   // stage 1: register read
   always @(posedge clk) begin
-    // if ((ir0 != `NOP) &&
-    //     setsrd(ir1) &&
-    //     ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-    //     (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
-    //   // stall waiting for register value
-    //   wait1 = 1;
-    //   ir1 <= `NOP;
-    // end else 
-    begin
+    if ((ir0 != `NOP) && setsrd(ir1) && ((usesrd(ir0)) || (usesrn(ir0)))) begin
+        // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+        // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+      // stall waiting for register value
+      wait1 = 1;
+      ir1 <= `NOP;
+    end else begin
       // all good, get operands (even if not needed)
       wait1 = 0;
       // rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
       rd1 <= r[ir0 `RD];
       // rn1 <= (usesim(ir0) ? im0 :
       //         ((ir0 `RN == 15) ? pc0 : r[ir0 `RN]));
+      rn1 <= r[ir0 `RN];
       ir1 <= ir0;
     end
   end
@@ -484,7 +487,7 @@ module processor(halt, reset, clk);
           `OPoneReg: 
             begin
               case (ir1 [15:8])
-                `OPjumpr: begin tpc <= r[ir1 `DestReg]; s <= `Start; end
+                `OPjumpr: begin target <= r[ir1 `DestReg]; s <= `Start; jump <= 1; end
                 `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; s <= `Start; end
                 `OPnegf:  begin r[ir1 `DestReg] <= negfRes; s <= `Start; end 
                 `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; s <= `Start; end
@@ -541,7 +544,11 @@ module processor(halt, reset, clk);
 
       // update z flag if we should
       // if (setsz(ir1)) zreg <= (res == 0);
-
+      if (setspc(ir1)) begin
+        jump <= 1;
+      end else begin
+        jump <= 0;
+      end
       // // put result in rd if we should
       // if (setsrd(ir1)) begin
       //   if (ir1 `RD == 15) begin
