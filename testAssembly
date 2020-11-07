@@ -1,18 +1,8 @@
 ; test all instructions
 
 	.text
-  lex $1, 0x5
-  jumpr $1
-  lex $1, 0x1
-  lex $1, 0x2
-  lex $1, 0x3
   lex $1, 0x4
-  lex $1, 0x5
-  lex $1, 0x6
-  lex $1, 0x7
-  lex $1, 0x8
-  lex $1, 0x9
-  lex $1, 0xa
+  jumpr $1
   sys
   sys
   lex $1, 0x1

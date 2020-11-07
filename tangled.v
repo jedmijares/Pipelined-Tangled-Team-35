@@ -248,7 +248,7 @@ module processor(halt, reset, clk);
   reg `WORD text `MEMSIZE; // instruction memory
   reg `WORD data `MEMSIZE; // data memory
   reg `WORD pc = 0;
-  reg `WORD tpc, pc0, pc1;
+  reg `WORD tpc, pc0;
   reg `WORD ir;
   reg `WORD ir0, ir1;
   // reg `WORD nextInstruction;
@@ -379,10 +379,12 @@ module processor(halt, reset, clk);
 
   // stage 0: instruction fetch and immediate extend
   always @(posedge clk) begin
-    tpc = (jump ? target : pc);
+    // tpc = (jump ? target : pc);
+    tpc = pc;
 
     if (wait1) begin
       // blocked by stage 1, so should not have a jump, but...
+      ir0 <= `NOP;
       pc <= tpc;
     end else begin
       // not blocked by stage 1
@@ -393,34 +395,24 @@ module processor(halt, reset, clk);
         ir0 <= `NOP;
         pc <= tpc;
       end else begin
-        // if (ir[13:12] == 0) begin
-        //   // // PRE operation
-        //   // havepre <= 1;
-        //   // prefix <= ir[11:0];
-        //   ir0 <= `NOP;
-        // end else begin
-          // if (usesim(ir)) begin
-          //   // extend immediate
-          //   // im0 <= {{12{ir[3]}}, ir `RN};
-          //   // havepre <= 0;
-          
-          ir0 <= ir;
-          end
-          pc <= tpc + 1;
-        // end
-        pc0 <= tpc;
+        ir0 <= ir;
+        pc <= tpc + 1;
       end
+      
+      pc0 <= tpc;
+    end
   end
 
   // stage 1: register read
   always @(posedge clk) begin
-    if ((ir0 != `NOP) && setsrd(ir1) && ((usesrd(ir0)) || (usesrn(ir0)))) begin
-        // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-        // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
-      // stall waiting for register value
-      wait1 = 1;
-      ir1 <= `NOP;
-    end else begin
+    // if ((ir0 != `NOP) && setsrd(ir1) && ((usesrd(ir0)) || (usesrn(ir0)))) begin
+    //     // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+    //     // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+    //   // stall waiting for register value
+    //   wait1 = 1;
+    //   ir1 <= `NOP;
+    // end else 
+    begin
       // all good, get operands (even if not needed)
       wait1 = 0;
       // rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
@@ -487,15 +479,15 @@ module processor(halt, reset, clk);
           `OPoneReg: 
             begin
               case (ir1 [15:8])
-                `OPjumpr: begin target <= r[ir1 `DestReg]; s <= `Start; jump <= 1; end
+                `OPjumpr: begin pc <= r[ir1 `DestReg]; s <= `Start; jump <= 1; end
                 `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; s <= `Start; end
                 `OPnegf:  begin r[ir1 `DestReg] <= negfRes; s <= `Start; end 
                 `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; s <= `Start; end
               endcase
             end
 
-          `OPbrf: begin tpc <= tpc + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-          `OPbrt: begin tpc <= tpc + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrf: begin pc <= pc + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrt: begin pc <= pc + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
 
           `OPlex: 
           begin 
