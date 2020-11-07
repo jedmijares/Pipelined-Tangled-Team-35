@@ -386,34 +386,39 @@ module processor(halt, reset, clk);
       // blocked by stage 1, so should not have a jump, but...
       ir0 <= `NOP;
       pc <= tpc;
+      $display("a");
     end else begin
       // not blocked by stage 1
       ir = text[tpc];
-
+      $display("c");
       if (pendpc) begin
         // waiting... pc doesn't change
         ir0 <= `NOP;
         pc <= tpc;
-      end else begin
+      end else
+      begin
         ir0 <= ir;
         pc <= tpc + 1;
       end
-      
+      $display(pc);
+      $displayh(ir0);
       pc0 <= tpc;
     end
   end
 
   // stage 1: register read
   always @(posedge clk) begin
-    // if ((ir0 != `NOP) && setsrd(ir1) && ((usesrd(ir0)) || (usesrn(ir0)))) begin
+    // if (setsrd(ir1)) begin
     //     // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
     //     // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
     //   // stall waiting for register value
     //   wait1 = 1;
-    //   ir1 <= `NOP;
+    //   $display("b");
+    //   // ir1 <= `NOP;
     // end else 
     begin
       // all good, get operands (even if not needed)
+      $display("d");
       wait1 = 0;
       // rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
       rd1 <= r[ir0 `RD];
@@ -553,6 +558,12 @@ module processor(halt, reset, clk);
       // end else jump <= 0;
     end
   end
+
+  always @(negedge clk) begin
+    $display("cycle");
+  end
+
+  
 // endcase
 
   // always @(posedge clk) begin
