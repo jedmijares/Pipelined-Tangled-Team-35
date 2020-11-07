@@ -408,14 +408,14 @@ module processor(halt, reset, clk);
 
   // stage 1: register read
   always @(posedge clk) begin
-    // if (setsrd(ir1)) begin
-    //     // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-    //     // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
-    //   // stall waiting for register value
-    //   wait1 = 1;
-    //   $display("b");
-    //   // ir1 <= `NOP;
-    // end else 
+    if (setsrd(ir1)) begin
+        // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+        // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+      // stall waiting for register value
+      wait1 = 1;
+      $display("b");
+      ir1 <= ir0;
+    end else 
     begin
       // all good, get operands (even if not needed)
       $display("d");
