@@ -126,7 +126,7 @@
 
 // make NOP (after fetch) an unconditional PRE 0
 `define NOP             16'b0
-
+`define NaN             16'hffff
 // Floating point Verilog modules for CPE480
   // Created February 19, 2019 by Henry Dietz, http://aggregate.org/hankd
   // Distributed under CC BY 4.0, https://creativecommons.org/licenses/by/4.0/
@@ -179,7 +179,7 @@
   wire [7:0] texp, taman, tbman;
   wire [4:0] slead;
   wire ssign, aegt, amgt, eqsgn;
-  assign r = ((a == 0) ? b : ((b == 0) ? a : s));
+  assign r = ((a != a) ? NaN : ((b != b) ? NaN : ((a == 0) ? b : ((b == 0) ? a : s))));
   assign aegt = (a `FEXP > b `FEXP);
   assign texp = (aegt ? (a `FEXP) : (b `FEXP));
   assign taman = (aegt ? {1'b1, (a `FFRAC)} : ({1'b1, (a `FFRAC)} >> (texp - a `FEXP)));
@@ -204,7 +204,7 @@
   assign s = (a `FSIGN ^ b `FSIGN);
   assign m = ({1'b1, (a `FFRAC)} * {1'b1, (b `FFRAC)});
   assign e = (((a `FEXP) + (b `FEXP)) -127 + m[15]);
-  assign r = (((a == 0) || (b == 0)) ? 0 : (m[15] ? {s, e, m[14:8]} : {s, e, m[13:7]}));
+  assign r = ( (a != a) ? NaN : ((b != b) ? NaN : (((a == 0) || (b == 0)) ? 0 : (m[15] ? {s, e, m[14:8]} : {s, e, m[13:7]}))));
   endmodule
 
   // Floating-point reciprocal, 16-bit r=1.0/a
@@ -217,6 +217,7 @@
   assign r `FSIGN = a `FSIGN;
   assign r `FEXP = 253 + (!(a `FFRAC)) - a `FEXP;
   assign r `FFRAC = look[a `FFRAC];
+  assign r = (a != a) ? NaN : r;
   endmodule
 
   // Floating-point shift, 16 bit
@@ -262,6 +263,7 @@
   output wire `FLOAT r;
   input wire `FLOAT a;
   assign r = {!(a `FSIGN), a `NOTSIGN};
+  assign r = (a != a) ? NaN : r;
   endmodule
 
 // Field definitions
