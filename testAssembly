@@ -1,6 +1,12 @@
 ; test all instructions
 
 	.text
+
+
+
+; test all instructions
+
+	.text
   lex $1, 0x4
   jumpr $1
   sys
@@ -32,6 +38,117 @@ pass3:
   brf $1, pass4
   sys
 pass4:
+startFloats:
+  lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x00
+	lhi $2, 0x40
+	lex $0, 0x40
+	lhi $0, 0x40
+	addf $1, $2
+	xor $1, $0
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, goodAdd
+	sys
+goodAdd:
+	lex $1, 0x00
+	lhi $1, 0x40
+	copy $2, $1
+	lex $3, 0x80
+	lhi $3, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	mulf $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	xor $1, $3
+	not $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brt $1, goodMult
+	sys
+goodMult:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x80
+	lhi $2, 0xbf
+	negf $1
+	xor $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, goodNegf
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+goodNegf:
+	lex $1, 0x00
+	lhi $1, 0x40
+	lex $2, 0x00
+	lhi $2, 0x3f
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	recip $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	xor $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, goodRecip
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+goodRecip:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x00
+	lhi $2, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sltf $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brt $1, goodSltf
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+goodSltf:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x01
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	int $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	xor $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, goodInt
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+goodInt:
 	lex $1, 0x80
 	lhi $1, 0x3f
 	lex $2, 0x05

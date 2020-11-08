@@ -261,13 +261,13 @@ module processor(halt, reset, clk);
   reg `STATE s, s2;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
-  fadd myFAdd(addfRes, r[ir `THIRD4], r[ir `FOURTH4]);
-  fmul myFMul(multfRes,r[ir `THIRD4], r[ir `FOURTH4]);
-  fslt myFSLT(sltfRes, r[ir `THIRD4], r[ir `FOURTH4]);
-  frecip myFRec(recipRes, r[ir `THIRD4]);
-  f2i myFloToInt(intRes ,r[ir `THIRD4]);
-  i2f myIntToFlo(floatRes, r[ir `THIRD4]); 
-  negf myNegF(negfRes, r[ir `THIRD4]);
+  fadd myFAdd(addfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
+  fmul myFMul(multfRes,r[ir1 `THIRD4], r[ir1 `FOURTH4]);
+  fslt myFSLT(sltfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
+  frecip myFRec(recipRes, r[ir1 `THIRD4]);
+  f2i myFloToInt(intRes ,r[ir1 `THIRD4]);
+  i2f myIntToFlo(floatRes, r[ir1 `THIRD4]); 
+  negf myNegF(negfRes, r[ir1 `THIRD4]);
 
   always @(posedge reset) begin
     halt <= 0;
