@@ -251,14 +251,11 @@ module processor(halt, reset, clk);
   reg `WORD tpc, pc0;
   reg `WORD ir;
   reg `WORD ir0, ir1;
-  // reg `WORD nextInstruction;
   reg `DATA im0, rd1, rn1, res;
-  reg `WORD target;	// jump target
   reg jump; // are we jumping?
   wire pendpc; // pc update pending?
   reg wait1; // need to stall in stage 1?
   reg `WORD sltCheck;
-  reg `STATE s, s2;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
   fadd myFAdd(addfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
@@ -272,7 +269,6 @@ module processor(halt, reset, clk);
   always @(posedge reset) begin
     halt <= 0;
     pc <= 0;
-    s <= `Start;
     ir0 = `NOP;
     ir1 = `NOP;
     $readmemh("testAssembly.text", text);
@@ -315,21 +311,6 @@ module processor(halt, reset, clk);
       inst `OP4bits == `OPbrt
     );
   endfunction
-
-  // function setsz;
-  // input `INST inst;
-  // setsz = ((inst `CC == `S) && setsrd(inst));
-  // endfunction
-
-  // function iscond;
-  // input `INST inst;
-  // iscond = ((inst `CC == `NE) || (inst `CC == `EQ));
-  // endfunction
-
-  // function usesim;
-  // input `INST inst;
-  // usesim = ((inst `IORR) && (inst `OP <= `OPSTR));
-  // endfunction
 
   function usesrd;
     input `WORD inst;
@@ -379,7 +360,6 @@ module processor(halt, reset, clk);
 
   // stage 0: instruction fetch and immediate extend
   always @(posedge clk) begin
-    // tpc = (jump ? target : pc);
     tpc = pc;
 
     if (wait1) begin
@@ -409,8 +389,8 @@ module processor(halt, reset, clk);
   // stage 1: register read
   always @(posedge clk) begin
     if (setsrd(ir1)) begin
-        // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-        // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+      // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
+      // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
       // stall waiting for register value
       wait1 = 1;
       $display("b");
@@ -420,10 +400,7 @@ module processor(halt, reset, clk);
       // all good, get operands (even if not needed)
       $display("d");
       wait1 = 0;
-      // rd1 <= ((ir0 `RD == 15) ? pc0 : r[ir0 `RD]);
       rd1 <= r[ir0 `RD];
-      // rn1 <= (usesim(ir0) ? im0 :
-      //         ((ir0 `RN == 15) ? pc0 : r[ir0 `RN]));
       rn1 <= r[ir0 `RN];
       ir1 <= ir0;
     end
@@ -440,7 +417,6 @@ module processor(halt, reset, clk);
         `OPsys: 
             begin
               halt <= 1;
-              // s <= `Start;
             end
             
           // Start Qat
@@ -484,38 +460,37 @@ module processor(halt, reset, clk);
           `OPoneReg: 
             begin
               case (ir1 [15:8])
-                `OPjumpr: begin pc <= r[ir1 `DestReg]; s <= `Start; jump <= 1; end
-                `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; s <= `Start; end
-                `OPnegf:  begin r[ir1 `DestReg] <= negfRes; s <= `Start; end 
-                `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; s <= `Start; end
+                `OPjumpr: begin pc <= r[ir1 `DestReg]; jump <= 1; end
+                `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; end
+                `OPnegf:  begin r[ir1 `DestReg] <= negfRes; end 
+                `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; end
               endcase
             end
 
-          `OPbrf: begin pc <= pc + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-          `OPbrt: begin pc <= pc + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
+          `OPbrf: begin pc <= pc + ((|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); end // subtract 1 to offset incrementing the pc
+          `OPbrt: begin pc <= pc + ((~|r[ir1 `SECOND4]) ? (16'b0) : ((ir1[7]) ? {{8{1'b1}}, (ir1 `BOTTOM8)} - 1 : ir1 `BOTTOM8 - 1)); end // subtract 1 to offset incrementing the pc
 
           `OPlex: 
           begin 
-            r[ir1 `SECOND4] <= {{8{ir1[7]}}, ir1 `BOTTOM8}; s <= `Start; 
+            r[ir1 `SECOND4] <= {{8{ir1[7]}}, ir1 `BOTTOM8}; 
           end
 
-          `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
+          `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; end 
 
           `OPnorms: 
             begin
               case (ir1 [15:8])
-                `OPadd: begin r[ir1 `DestReg] <= (r[ir1 `DestReg] + r[ir1 `SourceReg]); s <= `Start; end
-                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * r[ir1 `SourceReg]; s <= `Start; end
+                `OPadd: begin r[ir1 `DestReg] <= (r[ir1 `DestReg] + r[ir1 `SourceReg]); end
+                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * r[ir1 `SourceReg]; end
                 `OPslt: 
                 begin 
-                  // r[ir1 `DestReg] <= (r[ir1 `DestReg] < r[ir1 `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
                   sltCheck = r[ir1 `DestReg] - r[ir1 `SourceReg];
-                  r[ir1 `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
+                  r[ir1 `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); 
                 end
-                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & r[ir1 `SourceReg]; s <= `Start; end
-                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | r[ir1 `SourceReg]; s <= `Start; end
-                `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ r[ir1 `SourceReg]; s <= `Start; end
-                `OPshift: begin r[ir1 `DestReg] <= ((r[ir1 `SourceReg][15] == 0) ? (r[ir1 `DestReg] << r[ir1 `SourceReg]) : (r[ir1 `DestReg] >> -r[ir1 `SourceReg])); s <= `Start;
+                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & r[ir1 `SourceReg]; end
+                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | r[ir1 `SourceReg]; end
+                `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ r[ir1 `SourceReg]; end
+                `OPshift: begin r[ir1 `DestReg] <= ((r[ir1 `SourceReg][15] == 0) ? (r[ir1 `DestReg] << r[ir1 `SourceReg]) : (r[ir1 `DestReg] >> -r[ir1 `SourceReg]));
                 end
               endcase
             end
@@ -523,164 +498,32 @@ module processor(halt, reset, clk);
           `OPfloats:
             begin
               case (ir1 [15:8])
-                `OPaddf:  begin r[ir1 `DestReg] <= addfRes; s <= `Start; end
-                `OPmulf:  begin r[ir1 `DestReg] <= multfRes; s <= `Start; end
-                `OPsltf:  begin r[ir1 `DestReg] <= sltfRes; s <= `Start; end
-                `OPrecip: begin r[ir1 `DestReg] <= recipRes; s <= `Start; end
-                `OPfloat: begin r[ir1 `DestReg] <= floatRes; s <= `Start; end
-                `OPint:   begin r[ir1 `DestReg] <= intRes; s <= `Start; end
-                `OPcopy: begin r[ir1 `DestReg] <= r[ir1 `SourceReg]; s <= `Start; end
-                `OPstore: begin data[r[ir1 `SourceReg]] <= r[ir1 `DestReg]; s <= `Start; end
-                `OPload: begin r[ir1 `DestReg] <= data[r[ir1 `SourceReg]]; s <= `Start; end
+                `OPaddf:  begin r[ir1 `DestReg] <= addfRes; end
+                `OPmulf:  begin r[ir1 `DestReg] <= multfRes; end
+                `OPsltf:  begin r[ir1 `DestReg] <= sltfRes; end
+                `OPrecip: begin r[ir1 `DestReg] <= recipRes; end
+                `OPfloat: begin r[ir1 `DestReg] <= floatRes; end
+                `OPint:   begin r[ir1 `DestReg] <= intRes; end
+                `OPcopy: begin r[ir1 `DestReg] <= r[ir1 `SourceReg]; end
+                `OPstore: begin data[r[ir1 `SourceReg]] <= r[ir1 `DestReg]; end
+                `OPload: begin r[ir1 `DestReg] <= data[r[ir1 `SourceReg]]; end
               endcase
             end
-
 
         default: halt <= 1; // make it stop
       endcase
 
-      // update z flag if we should
-      // if (setsz(ir1)) zreg <= (res == 0);
       if (setspc(ir1)) begin
         jump <= 1;
       end else begin
         jump <= 0;
       end
-      // // put result in rd if we should
-      // if (setsrd(ir1)) begin
-      //   if (ir1 `RD == 15) begin
-      //     jump <= 1;
-      //     target <= res;
-      //   end else begin
-      //     r[ir1 `RD] <= res;
-      //     jump <= 0;
-      //   end
-      // end else jump <= 0;
     end
   end
 
   always @(negedge clk) begin
     $display("cycle");
   end
-
-  
-// endcase
-
-  // always @(posedge clk) begin
-  //   case (s)
-  //     `Start: 
-  //       begin 
-  //         ir <= text[pc]; 
-  //         // nextInstruction <= text[pc + 1];
-  //         s <= `Decode;
-  //       end 
-      
-  //     `Decode: 
-  //       begin
-  //         pc <= pc + 1;
-  //         s <= ir `Op0;
-  //         ir1 [11:8] <= ir `Reg0;
-  //       end
-
-  //     `OPsys: 
-  //       begin
-  //         halt <= 1;
-  //         s <= `Start;
-  //       end
-        
-  //     // Start Qat
-  //     `OPsingleQ:
-  //       begin
-  //         case (ir1 [11:8])
-  //           `OPnotQ: begin s <= `OPsys; end
-  //           `OPoneQ: begin s <= `OPsys; end
-  //           `OPzeroQ: begin s <= `OPsys; end
-  //         endcase
-  //       end
-
-  //     `OPhadQ: begin s <= `OPsys; end
-
-  //     `OPtwoQ:
-  //       begin
-  //         pc <= pc + 1;
-  //         case (ir1 [11:8])
-  //           `OPcnotQ: begin s <= `OPsys; end
-  //           `OPswapQ: begin s <= `OPsys; end
-  //         endcase
-  //       end
-
-  //     `OPthreeQ:
-  //       begin
-  //         pc <= pc + 1;
-  //         case (ir1 [11:8])
-  //           `OPccnotQ: begin s <= `OPsys; end
-  //           `OPcswapQ: begin s <= `OPsys; end
-  //           `OPandQ: begin s <= `OPsys; end
-  //           `OPorQ: begin s <= `OPsys; end
-  //           `OPxorQ: begin s <= `OPsys; end
-  //         endcase
-  //       end
-
-  //     `OPmeasQ: begin s <= `OPsys; end
-
-  //     `OPnextQ: begin s <= `OPsys; end
-  //     // End Qat
-
-  //     `OPoneReg: 
-  //       begin
-  //         case (ir1 [11:8])
-  //           `OPjumpr: begin pc <= r[ir `DestReg]; s <= `Start; end
-  //           `OPneg:   begin r[ir `DestReg] <= -r[ir `DestReg]; s <= `Start; end
-  //           `OPnegf:  begin r[ir `DestReg] <= negfRes; s <= `Start; end 
-  //           `OPnot:   begin r[ir `DestReg] <= ~r[ir `DestReg]; s <= `Start; end
-  //         endcase
-  //       end
-
-  //     `OPbrf: begin pc <= pc + ((|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-  //     `OPbrt: begin pc <= pc + ((~|r[ir `SECOND4]) ? (16'b0) : ((ir[7]) ? {{8{1'b1}}, (ir `BOTTOM8)} - 1 : ir `BOTTOM8 - 1)); s <= `Start; end // subtract 1 to offset incrementing the pc in Decode
-
-  //     `OPlex: 
-  //     begin 
-  //       r[ir `SECOND4] <= {{8{ir[7]}}, ir `BOTTOM8}; s <= `Start; 
-  //     end
-
-  //     `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; s <= `Start; end 
-
-  //     `OPnorms: 
-  //       begin
-  //         case (ir1 [11:8])
-  //           `OPadd: begin r[ir `DestReg] <= r[ir `DestReg] + r[ir `SourceReg]; s <= `Start; end
-  //           `OPmul: begin r[ir `DestReg] <= r[ir `DestReg] * r[ir `SourceReg]; s <= `Start; end
-  //           `OPslt: 
-  //           begin 
-  //             // r[ir `DestReg] <= (r[ir `DestReg] < r[ir `SourceReg] ? 16'b1 : 16'b0); s <= `Start; 
-  //             sltCheck = r[ir `DestReg] - r[ir `SourceReg];
-  //             r[ir `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); s <= `Start; 
-  //           end
-  //           `OPand: begin r[ir `DestReg] <= r[ir `DestReg] & r[ir `SourceReg]; s <= `Start; end
-  //           `OPor:  begin r[ir `DestReg] <= r[ir `DestReg] | r[ir `SourceReg]; s <= `Start; end
-  //           `OPxor: begin r[ir `DestReg] <= r[ir `DestReg] ^ r[ir `SourceReg]; s <= `Start; end
-  //           `OPshift: begin r[ir `DestReg] <= ((r[ir `SourceReg][15] == 0) ? (r[ir `DestReg] << r[ir `SourceReg]) : (r[ir `DestReg] >> -r[ir `SourceReg])); s <= `Start;
-  //           end
-  //         endcase
-  //       end
-   
-  //     `OPfloats:
-  //       begin
-  //         case (ir1 [11:8])
-  //           `OPaddf:  begin r[ir `DestReg] <= addfRes; s <= `Start; end
-  //           `OPmulf:  begin r[ir `DestReg] <= multfRes; s <= `Start; end
-  //           `OPsltf:  begin r[ir `DestReg] <= sltfRes; s <= `Start; end
-  //           `OPrecip: begin r[ir `DestReg] <= recipRes; s <= `Start; end
-  //           `OPfloat: begin r[ir `DestReg] <= floatRes; s <= `Start; end
-  //           `OPint:   begin r[ir `DestReg] <= intRes; s <= `Start; end
-  //           `OPcopy: begin r[ir `DestReg] <= r[ir `SourceReg]; s <= `Start; end
-  //           `OPstore: begin data[r[ir `SourceReg]] <= r[ir `DestReg]; s <= `Start; end
-  //           `OPload: begin r[ir `DestReg] <= data[r[ir `SourceReg]]; s <= `Start; end
-  //         endcase
-  //       end
-  //   endcase
-  // end
 endmodule
 
 module testbench;
