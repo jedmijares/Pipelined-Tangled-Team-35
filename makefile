@@ -14,8 +14,4 @@ assembly: tangled.aik testAssembly
 	./aik tangled.aik QatTest
 
 clean:
-	rm *.text *.data tangled
-
-pinky: pipelinePinky.v
-	iverilog -o pinky pipelinePinky.v
-	vvp pinky
+	rm -f *.text *.data tangled dump.txt
