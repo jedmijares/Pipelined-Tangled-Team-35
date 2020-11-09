@@ -33,6 +33,22 @@ pass3:
   sys
 pass4:
 startFloats:
+; lex $1, 0x01 ; float conversion doesn't function
+;	lex $2, 0x80
+;	lhi $2, 0x3f
+;	float $1
+;	xor $1, $2
+;	brf $1, goodFloat
+;	sys
+goodFloat:
+	lex $1, 0x80
+	lhi $1, 0x3f
+	lex $2, 0x01
+	int $1
+	xor $1, $2
+	brf $1, goodInt
+	sys
+goodInt:
   lex $1, 0x80
 	lhi $1, 0x3f
 	lex $2, 0x00
@@ -122,29 +138,6 @@ goodRecip:
 goodSltf:
 	lex $1, 0x80
 	lhi $1, 0x3f
-	lex $2, 0x01
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-	int $1
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-	xor $1, $2
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-	brf $1, goodInt
-  lex $7, 0x40
-  lex $7, 0x40
-  lex $7, 0x40
-	sys
-goodInt:
-	lex $1, 0x80
-	lhi $1, 0x3f
 	lex $2, 0x05
 	lhi $2, 0x00
 	store $1, $2
@@ -217,7 +210,6 @@ loop:
   lex $3, 0x5
   xor $0, $3
   brt $0, loop ; test backwards branch
-
   lex $1, 0xFF
   lex $2, 0x00
   store $1, $2 ; store 0xFFFF at location 0
@@ -229,4 +221,101 @@ copyPass:
   brt $1, loadPass; halt if reg 1 is still 0
   sys
 loadPass:
+; begin testing NANs
+  lex $0, 0xc0
+  lhi $0, 0xFF
+  lex $1, 0x80
+	lhi $1, 0x3f
+  addf $1, $0
+	xor $1, $0
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, nanAdd
+	sys
+nanAdd:
+  lex $0, 0xc0
+  lhi $0, 0xFF
+  lex $2, 0xc0
+  lhi $2, 0xFF
+  lex $1, 0x80
+	lhi $1, 0x3f
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+  mulf $2, $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	xor $2, $0
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $2, nanMul
+	sys
+nanMul:
+  lex $0, 0xc0
+  lhi $0, 0xFF
+  lex $1, 0xc0
+  lhi $1, 0xFF
+	negf $0
+	xor $0, $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $0, nanNegf
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+nanNegf:
+  lex $2, 0xc0
+  lhi $2, 0xFF
+  lex $1, 0x80
+	lhi $1, 0x3f
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sltf $1, $2
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, nanSltf
+	sys
+nanSltf:
+  lex $2, 0xc0
+  lhi $2, 0xFF
+  lex $1, 0x80
+	lhi $1, 0x3f
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sltf $2, $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $2, nanSltf2
+	sys
+nanSltf2:
+  lex $1, 0x00
+	lhi $1, 0x00
+	lex $0, 0xc0
+  lhi $0, 0xFF
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	recip $1
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	xor $1, $0
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	brf $1, recipNAN
+  lex $7, 0x40
+  lex $7, 0x40
+  lex $7, 0x40
+	sys
+recipNAN:
   sys

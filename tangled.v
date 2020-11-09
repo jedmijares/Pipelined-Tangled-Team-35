@@ -117,6 +117,7 @@
   `define	FZERO	16'b0	  // float 0
   `define F32767  16'h46ff  // closest approx to 32767, actually 32640
   `define F32768  16'hc700  // -32768
+  `define NAN 16'hffc0
 
   // Count leading zeros, 16-bit (5-bit result) d=lead0s(s)
   module lead0s(d, s);
@@ -138,9 +139,7 @@
   module fslt(torf, a, b);
   output wire torf;
   input wire `FLOAT a, b;
-  assign torf = (a `FSIGN && !(b `FSIGN)) ||
-          (a `FSIGN && b `FSIGN && (a[14:0] > b[14:0])) ||
-          (!(a `FSIGN) && !(b `FSIGN) && (a[14:0] < b[14:0]));
+  assign torf =  (b != `NAN ? (a != `NAN ? ((a `FSIGN && !(b `FSIGN)) || (a `FSIGN && b `FSIGN && (a[14:0] > b[14:0])) || (!(a `FSIGN) && !(b `FSIGN) && (a[14:0] < b[14:0]))) : 1'b0) : 1'b0);
   endmodule
 
   // Floating-point addition, 16-bit r=a+b
@@ -152,7 +151,7 @@
   wire [7:0] texp, taman, tbman;
   wire [4:0] slead;
   wire ssign, aegt, amgt, eqsgn;
-  assign r = ((a == 0) ? b : ((b == 0) ? a : s));
+  assign r = (b != `NAN ? (a != `NAN ? ((a == 0) ? b : ((b == 0) ? a : s)) : `NAN) : `NAN);
   assign aegt = (a `FEXP > b `FEXP);
   assign texp = (aegt ? (a `FEXP) : (b `FEXP));
   assign taman = (aegt ? {1'b1, (a `FFRAC)} : ({1'b1, (a `FFRAC)} >> (texp - a `FEXP)));
@@ -177,31 +176,35 @@
   assign s = (a `FSIGN ^ b `FSIGN);
   assign m = ({1'b1, (a `FFRAC)} * {1'b1, (b `FFRAC)});
   assign e = (((a `FEXP) + (b `FEXP)) -127 + m[15]);
-  assign r = (((a == 0) || (b == 0)) ? 0 : (m[15] ? {s, e, m[14:8]} : {s, e, m[13:7]}));
+  assign r = (b != `NAN ? (a != `NAN ? (((a == 0) || (b == 0)) ? 0 : (m[15] ? {s, e, m[14:8]} : {s, e, m[13:7]})) : `NAN) : `NAN);
   endmodule
 
   // Floating-point reciprocal, 16-bit r=1.0/a
   // Note: requires initialized inverse fraction lookup table
   module frecip(r, a);
   output wire `FLOAT r;
+  wire `FLOAT tempR;
   input wire `FLOAT a;
   reg [6:0] look[127:0];
   initial $readmemh("reciprocalLookup.mem", look);
-  assign r `FSIGN = a `FSIGN;
-  assign r `FEXP = 253 + (!(a `FFRAC)) - a `FEXP;
-  assign r `FFRAC = look[a `FFRAC];
+  assign tempR `FSIGN = a `FSIGN;
+  assign tempR `FEXP = 253 + (!(a `FFRAC)) - a `FEXP;
+  assign tempR `FFRAC = look[a `FFRAC];
+  assign r = ((a != 0) ? tempR : `NAN);
   endmodule
 
-  // Floating-point shift, 16 bit
-  // Shift +left,-right by integer
-  module fshift(r, f, i);
-  output wire `FLOAT r;
-  input wire `FLOAT f;
-  input wire `INT i;
-  assign r `FFRAC = f `FFRAC;
-  assign r `FSIGN = f `FSIGN;
-  assign r `FEXP = (f ? (f `FEXP + i) : 0);
-  endmodule
+  // // Floating-point shift, 16 bit
+  // // Shift +left,-right by integer
+  // module fshift(r, f, i);
+  // output wire `FLOAT r;
+  // wire `FLOAT tempR;
+  // input wire `FLOAT f;
+  // input wire `INT i;
+  // assign tempR `FFRAC = f `FFRAC;
+  // assign tempR `FSIGN = f `FSIGN;
+  // assign tempR `FEXP = (f ? (f `FEXP + i) : 0);
+  // assign r = (f ? tempR : `NAN);
+  // endmodule
 
   // Integer to float conversion, 16 bit
   module i2f(f, i);
@@ -216,6 +219,7 @@
   assign f `FEXP = (i ? (128 + (14 - lead)) : 0);
   endmodule
 
+  // TODO ?
   // Float to integer conversion, 16 bit
   // Note: out-of-range values go to -32768 or 32767
   module f2i(i, f);
@@ -234,7 +238,7 @@
   module negf(r, a);
   output wire `FLOAT r;
   input wire `FLOAT a;
-  assign r = {!(a `FSIGN), a `NOTSIGN};
+  assign r = (a != `NAN ? {!(a `FSIGN), a `NOTSIGN} : `NAN);
   endmodule
 
 // Field definitions
