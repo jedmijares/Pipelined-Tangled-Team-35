@@ -6,8 +6,6 @@
 `define CC [15:14]
 `define OP [14:9]
 `define IORR [8]
-`define RD [7:4]
-`define RN [3:0]
 `define REGS [15:0]
 
 // Multi-cycle Tangled Implementation
@@ -28,8 +26,6 @@
 `define SECOND4 `Reg0
 `define BOTTOM8 [7:0]
 `define TOP8    [15:8]
-`define THIRD4  [7:4]
-`define FOURTH4 [3:0]
 
 // op codes
 `define SYSCALL 16'b0
@@ -262,13 +258,13 @@ module processor(halt, reset, clk);
   reg `WORD sltCheck;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
-  fadd myFAdd(addfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
-  fmul myFMul(multfRes,r[ir1 `THIRD4], r[ir1 `FOURTH4]);
-  fslt myFSLT(sltfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
-  frecip myFRec(recipRes, r[ir1 `THIRD4]);
-  f2i myFloToInt(intRes ,r[ir1 `THIRD4]);
-  i2f myIntToFlo(floatRes, r[ir1 `THIRD4]); 
-  negf myNegF(negfRes, r[ir1 `THIRD4]);
+  fadd myFAdd(addfRes, rd1, rn1);
+  fmul myFMul(multfRes,rd1, rn1);
+  fslt myFSLT(sltfRes, r[ir1 `DestReg], rn1);
+  frecip myFRec(recipRes, r[ir1 `DestReg]);
+  f2i myFloToInt(intRes , r[ir1 `DestReg]);
+  i2f myIntToFlo(floatRes, rd1); 
+  negf myNegF(negfRes, rd1);
 
   always @(posedge reset) begin
     halt <= 0;
@@ -389,9 +385,10 @@ module processor(halt, reset, clk);
 
   // stage 1: register read
   always @(posedge clk) begin
+    // if (setsrd(ir1) && (usesrd(ir0) || usesrn(ir0))) begin
     if (setsrd(ir1)) begin
-      // ((usesrd(ir0) && (ir0 `RD == ir1 `RD)) ||
-      // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
+      // ((usesrd(ir0) && (ir0 `DestReg == ir1 `DestReg)) ||
+      // (usesrn(ir0) && (ir0 `SourceReg == ir1 `DestReg)))) begin
       // stall waiting for register value
       wait1 = 1;
       ir1 <= ir0;
@@ -399,8 +396,8 @@ module processor(halt, reset, clk);
     begin
       // all good, get operands (even if not needed)
       wait1 = 0;
-      rd1 <= r[ir0 `RD];
-      rn1 <= r[ir0 `RN];
+      rd1 <= r[ir0 `DestReg];
+      rn1 <= r[ir0 `SourceReg];
       ir1 <= ir0;
     end
   end
@@ -460,7 +457,7 @@ module processor(halt, reset, clk);
                 `OPjumpr: begin pc <= r[ir1 `DestReg]; jump <= 1; end
                 `OPneg:   begin r[ir1 `DestReg] <= -r[ir1 `DestReg]; end
                 `OPnegf:  begin r[ir1 `DestReg] <= negfRes; end 
-                `OPnot:   begin r[ir1 `DestReg] <= ~r[ir1 `DestReg]; end
+                `OPnot:   begin r[ir1 `DestReg] <= ~rd1; end
               endcase
             end
 
@@ -477,17 +474,17 @@ module processor(halt, reset, clk);
           `OPnorms: 
             begin
               case (ir1 [15:8])
-                `OPadd: begin r[ir1 `DestReg] <= (r[ir1 `DestReg] + r[ir1 `SourceReg]); end
-                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * r[ir1 `SourceReg]; end
+                `OPadd: begin r[ir1 `DestReg] <= (rd1 + rn1); end
+                `OPmul: begin r[ir1 `DestReg] <= rd1 * rn1; end
                 `OPslt: 
                 begin 
-                  sltCheck = r[ir1 `DestReg] - r[ir1 `SourceReg];
+                  sltCheck = rd1 - rn1;
                   r[ir1 `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); 
                 end
-                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & r[ir1 `SourceReg]; end
-                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | r[ir1 `SourceReg]; end
+                `OPand: begin r[ir1 `DestReg] <= rd1 & rn1; end
+                `OPor:  begin r[ir1 `DestReg] <= rd1 | rn1; end
                 `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ r[ir1 `SourceReg]; end
-                `OPshift: begin r[ir1 `DestReg] <= ((r[ir1 `SourceReg][15] == 0) ? (r[ir1 `DestReg] << r[ir1 `SourceReg]) : (r[ir1 `DestReg] >> -r[ir1 `SourceReg]));
+                `OPshift: begin r[ir1 `DestReg] <= ((rn1[15] == 0) ? (rd1 << rn1) : (rd1 >> -rn1));
                 end
               endcase
             end
@@ -501,9 +498,9 @@ module processor(halt, reset, clk);
                 `OPrecip: begin r[ir1 `DestReg] <= recipRes; end
                 `OPfloat: begin r[ir1 `DestReg] <= floatRes; end
                 `OPint:   begin r[ir1 `DestReg] <= intRes; end
-                `OPcopy: begin r[ir1 `DestReg] <= r[ir1 `SourceReg]; end
-                `OPstore: begin data[r[ir1 `SourceReg]] <= r[ir1 `DestReg]; end
-                `OPload: begin r[ir1 `DestReg] <= data[r[ir1 `SourceReg]]; end
+                `OPcopy: begin r[ir1 `DestReg] <= rn1; end
+                `OPstore: begin data[r[ir1 `SourceReg]] <= rd1; end
+                `OPload: begin r[ir1 `DestReg] <= data[rn1]; end
               endcase
             end
 
