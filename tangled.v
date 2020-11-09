@@ -474,7 +474,7 @@ module processor(halt, reset, clk);
             r[ir1 `SECOND4] <= {{8{ir1[7]}}, ir1 `BOTTOM8}; 
           end
 
-          `OPlhi: begin r[ir `SECOND4] `TOP8 <= ir `BOTTOM8; end 
+          `OPlhi: begin r[ir1 `SECOND4] `TOP8 <= ir1 `BOTTOM8; end 
 
           `OPnorms: 
             begin
