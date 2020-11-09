@@ -22,6 +22,10 @@ Sam\\
 This is a pipelined implementation of a processor for the Tangled instruction set. 
 \end{abstract}
 
+\section{Running Project}
+
+We decided to run our Verilog locally, so a few commands differ from Dr. Dietz's web interface. A Makefile is included to facilitate running the project. To run different assembly programs, such as the files demonstrating the halting from Qat instructions, the \texttt{readmemh} instructions must be changed to the appropriate filenames.
+
 \section{Pipelined Approach}
 
 Our processor implements 3 testing stages: instruction fetch, register read, and ALU/memory access/register store.
@@ -38,8 +42,12 @@ Stage 2 implements the bulk of the processor. Most of the Verilog to operate eac
 
 For many of the float instructions, NaN support was implemented by simply adding the ternary \texttt{?:} operator to check if an input was NaN and set the result to NaN if so. In some cases, the result of the original library assignments is stored on a \texttt{tempR} wire, which is then possibly selected depending on the value of an input. For example, \texttt{frecip} outputs NaN only if the input \texttt{a} is 0.
 
+\section{Testing}
+
+Much of the test code used was written for the last project, but some new instructions were added as well, such as instructions to test the NaN operations.
+
 \section{Issues}
 
-We had issues completing some aspects of this project. First, the processor does not block only in the occurrence that there is a data dependence issue - it blocks every time that a destination register is written to, which could cause a data dependence issue. Second, in stage 1, while we do read the value of the source and destination registers, we don't use these values and simply read from the register file again in stage 2. Third, the float instructions fail to operate unless they have been padded with other instruction to stall before or afterwards. In the test file extra \texttt{lex} instructions have been added to allow the test cases to pass. Still, some of the float instructions that worked on the multi-cycled design refused to work on the pipelined design, such as the conversion operations.
+We had issues completing some aspects of this project. First, the processor does not block only in the occurrence that there is a data dependence issue - it blocks every time that a destination register is written to, which could cause a data dependence issue. Second, in stage 1, while we do read the value of the source and destination registers, we don't use these values and simply read from the register file again in stage 2. Third, the float instructions fail to operate unless they have been padded with other instruction to stall before or afterwards. In the test file extra \texttt{lex} instructions have been added to allow the test cases to pass. Still, some of the float instructions that worked on the multi-cycled design refused to work on the pipelined design, such as the conversion operations. Fourth, halting does not seem to happen immediately, instructions may still be processed after a halt.
 
 \end{document}
