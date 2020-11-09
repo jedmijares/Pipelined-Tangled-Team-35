@@ -382,6 +382,7 @@ module processor(halt, reset, clk);
         ir0 <= ir;
         pc <= tpc + 1;
       end
+      $display(pc);
       pc0 <= tpc;
     end
   end
