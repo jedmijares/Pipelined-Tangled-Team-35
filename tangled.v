@@ -432,7 +432,6 @@ module processor(halt, reset, clk);
 
           `OPtwoQ:
             begin
-              pc <= pc + 1;
               case (ir1 [11:8])
                 `OPcnotQ: begin halt <= 1; end
                 `OPswapQ: begin halt <= 1; end
@@ -441,7 +440,6 @@ module processor(halt, reset, clk);
 
           `OPthreeQ:
             begin
-              pc <= pc + 1;
               case (ir1 [11:8])
                 `OPccnotQ: begin halt <= 1; end
                 `OPcswapQ: begin halt <= 1; end
