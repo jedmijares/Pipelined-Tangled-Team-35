@@ -251,16 +251,16 @@ module processor(halt, reset, clk);
   reg `WORD tpc, pc0;
   reg `WORD ir;
   reg `WORD ir0, ir1;
-  reg `DATA im0, rd1, rn1, res;
+  reg `DATA im0, rd1, rs1, res;
   reg jump; // are we jumping?
   wire pendpc; // pc update pending?
   reg wait1; // need to stall in stage 1?
   reg `WORD sltCheck;
 
   wire `FLOAT addfRes, multfRes, sltfRes, recipRes, floatRes, intRes, negfRes;
-  fadd myFAdd(addfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
-  fmul myFMul(multfRes,r[ir1 `THIRD4], r[ir1 `FOURTH4]);
-  fslt myFSLT(sltfRes, r[ir1 `THIRD4], r[ir1 `FOURTH4]);
+  fadd myFAdd(addfRes, r[ir1 `THIRD4], rs1);
+  fmul myFMul(multfRes,r[ir1 `THIRD4], rs1);
+  fslt myFSLT(sltfRes, r[ir1 `THIRD4], rs1);
   frecip myFRec(recipRes, r[ir1 `THIRD4]);
   f2i myFloToInt(intRes ,r[ir1 `THIRD4]);
   i2f myIntToFlo(floatRes, r[ir1 `THIRD4]); 
@@ -366,11 +366,11 @@ module processor(halt, reset, clk);
       // blocked by stage 1, so should not have a jump, but...
       ir0 <= `NOP;
       pc <= tpc;
-      $display("a");
+      // $display("a");
     end else begin
       // not blocked by stage 1
       ir = text[tpc];
-      $display("c");
+      // $display("c");
       if (pendpc) begin
         // waiting... pc doesn't change
         ir0 <= `NOP;
@@ -380,8 +380,8 @@ module processor(halt, reset, clk);
         ir0 <= ir;
         pc <= tpc + 1;
       end
-      $display(pc);
-      $displayh(ir0);
+      // $display(pc);
+      // $displayh(ir0);
       pc0 <= tpc;
     end
   end
@@ -393,21 +393,25 @@ module processor(halt, reset, clk);
       // (usesrn(ir0) && (ir0 `RN == ir1 `RD)))) begin
       // stall waiting for register value
       wait1 = 1;
-      $display("b");
+      // $display("b");
+      rd1 <= r[ir0 `DestReg];
+      rs1 <= r[ir0 `SourceReg];
       ir1 <= ir0;
     end else 
     begin
       // all good, get operands (even if not needed)
-      $display("d");
+      // $display("d");
       wait1 = 0;
-      rd1 <= r[ir0 `RD];
-      rn1 <= r[ir0 `RN];
+      rd1 <= r[ir0 `DestReg];
+      rs1 <= r[ir0 `SourceReg];
       ir1 <= ir0;
     end
   end
 
   // stage 2: ALU, data memory access, store in register
   always @(posedge clk) begin
+    $displayh(rs1);
+    $displayh(r[ir1 `SourceReg]);
     if ((ir1 == `NOP)) begin
       // condition says nothing happens
       jump <= 0;
@@ -480,17 +484,17 @@ module processor(halt, reset, clk);
           `OPnorms: 
             begin
               case (ir1 [15:8])
-                `OPadd: begin r[ir1 `DestReg] <= (r[ir1 `DestReg] + r[ir1 `SourceReg]); end
-                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * r[ir1 `SourceReg]; end
+                `OPadd: begin r[ir1 `DestReg] <= (r[ir1 `DestReg] + rs1); end
+                `OPmul: begin r[ir1 `DestReg] <= r[ir1 `DestReg] * rs1; end
                 `OPslt: 
                 begin 
-                  sltCheck = r[ir1 `DestReg] - r[ir1 `SourceReg];
+                  sltCheck = r[ir1 `DestReg] - rs1;
                   r[ir1 `DestReg] <= ((sltCheck[15]) ? 16'b1 : 16'b0); 
                 end
-                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & r[ir1 `SourceReg]; end
-                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | r[ir1 `SourceReg]; end
-                `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ r[ir1 `SourceReg]; end
-                `OPshift: begin r[ir1 `DestReg] <= ((r[ir1 `SourceReg][15] == 0) ? (r[ir1 `DestReg] << r[ir1 `SourceReg]) : (r[ir1 `DestReg] >> -r[ir1 `SourceReg]));
+                `OPand: begin r[ir1 `DestReg] <= r[ir1 `DestReg] & rs1; end
+                `OPor:  begin r[ir1 `DestReg] <= r[ir1 `DestReg] | rs1; end
+                `OPxor: begin r[ir1 `DestReg] <= r[ir1 `DestReg] ^ rs1; end
+                `OPshift: begin r[ir1 `DestReg] <= ((rs1[15] == 0) ? (r[ir1 `DestReg] << rs1) : (r[ir1 `DestReg] >> -rs1));
                 end
               endcase
             end
@@ -504,9 +508,9 @@ module processor(halt, reset, clk);
                 `OPrecip: begin r[ir1 `DestReg] <= recipRes; end
                 `OPfloat: begin r[ir1 `DestReg] <= floatRes; end
                 `OPint:   begin r[ir1 `DestReg] <= intRes; end
-                `OPcopy: begin r[ir1 `DestReg] <= r[ir1 `SourceReg]; end
-                `OPstore: begin data[r[ir1 `SourceReg]] <= r[ir1 `DestReg]; end
-                `OPload: begin r[ir1 `DestReg] <= data[r[ir1 `SourceReg]]; end
+                `OPcopy: begin r[ir1 `DestReg] <= rs1; end
+                `OPstore: begin data[rs1] <= r[ir1 `DestReg]; end
+                `OPload: begin r[ir1 `DestReg] <= data[rs1]; end
               endcase
             end
 
@@ -533,7 +537,7 @@ wire halted;
 processor PE(halted, reset, clk);
 initial begin
   $dumpfile("dump.txt");
-  $dumpvars(0, PE, PE.r[0], PE.r[1], PE.r[2]); // would normally trace 0, PE
+  $dumpvars(0, PE, PE.r[0], PE.r[1], PE.r[2], PE.r[3]); // would normally trace 0, PE
   #1 reset = 1;
   #1 reset = 0;
   while (!halted) begin
