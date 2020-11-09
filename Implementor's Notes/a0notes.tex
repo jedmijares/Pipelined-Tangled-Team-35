@@ -36,10 +36,10 @@ Stage 2 implements the bulk of the processor. Most of the Verilog to operate eac
 
 \section{Float NaN Support}
 
-Float NaN support does not exist.
+For many of the float instructions, NaN support was implemented by simply adding the ternary \texttt{?:} operator to check if an input was NaN and set the result to NaN if so. In some cases, the result of the original library assignments is stored on a \texttt{tempR} wire, which is then possibly selected depending on the value of an input. For example, \texttt{frecip} outputs NaN only if the input \texttt{a} is 0.
 
 \section{Issues}
 
-We had issues completing some aspects of this project. First, the processor does not block only in the occurrence that there is a data dependence issue - it blocks every time that a destination register is written to, which could cause a data dependence issue. Second, in stage 1, while we do read the value of the source and destination registers, we don't use these values and simply read from the register file again in stage 2. Third, the float instructions fail to operate unless they have been padded with other instruction to stall before or afterwards. In the test file extra \texttt{lex} instructions have been added to allow the test cases to pass.
+We had issues completing some aspects of this project. First, the processor does not block only in the occurrence that there is a data dependence issue - it blocks every time that a destination register is written to, which could cause a data dependence issue. Second, in stage 1, while we do read the value of the source and destination registers, we don't use these values and simply read from the register file again in stage 2. Third, the float instructions fail to operate unless they have been padded with other instruction to stall before or afterwards. In the test file extra \texttt{lex} instructions have been added to allow the test cases to pass. Still, some of the float instructions that worked on the multi-cycled design refused to work on the pipelined design, such as the conversion operations.
 
 \end{document}
