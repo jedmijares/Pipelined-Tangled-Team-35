@@ -15,26 +15,31 @@ Tanner Palin\\
 Sam\\
        \affaddr{Department of Electrical and Computer Engineering}\\
        \affaddr{University of Kentucky, Lexington, KY USA}\\
-    %   \email{\texttt{gami227@uky.edu}}
 }
 
 \maketitle
 \begin{abstract}
-This is an pipelined implementation of a processor for the Tangled instruction set. 
+This is a pipelined implementation of a processor for the Tangled instruction set. 
 \end{abstract}
 
 \section{Pipelined Approach}
 
-Jed will fill this in later.
+Our processor implements 3 testing stages: instruction fetch, register read, and ALU/memory access/register store.
 
-% \iffalse
-% \vfill\pagebreak
-% \fi
+Stage 0, instruction fetch, first checks if stage 1 is prompting it to wait. If so, it sets the current instruction to a NOP. If stage 1 is not blocking stage 0, it fetches the instruction for the current program counter value. If either stage 0 or stage 1's instruction can modify the PC, then stage 0 stalls. Otherwise, the program continues with the fetched instruction and increments the PC.
+
+Stage 1, register read, first checks if the instruction in its instruction register can set a new value into a register. If so, it prompts stage 0 to wait, as mentioned above.
+
+Stage 2 implements the bulk of the processor. Most of the Verilog to operate each instruction was lifted from Jed's team's Multi-Cycled Design, as his had been tested.
+
+\vfill\pagebreak
 
 \section{Float NaN Support}
 
-We are attempting to add NaN support by using a cascade of ternary operators that check the inputs to see if they are NaN (16'hffff). If they are NaN,then the output must also be NaN.
+Float NaN support does not exist.
 
 \section{Issues}
+
+We had issues completing some aspects of this project. First, the processor does not block only in the occurrence that there is a data dependence issue - it blocks every time that a destination register is written to, which could cause a data dependence issue. Second, in stage 1, while we do read the value of the source and destination registers, we don't use these values and simply read from the register file again in stage 2. Third, the float instructions fail to operate unless they have been padded with other instruction to stall before or afterwards. In the test file extra \texttt{lex} instructions have been added to allow the test cases to pass.
 
 \end{document}
